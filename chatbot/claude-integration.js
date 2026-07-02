@@ -1,10 +1,5 @@
-// Claude API integration: Real implementation of chatbot orchestration
-// Requires: ANTHROPIC_API_KEY env var
-//
-// Usage:
-//   node claude-integration.js
-//
-// Or integrate into chatbot-server.js
+// Claude API integration: agentic tool_use loop over the executor.
+// Requires: ANTHROPIC_API_KEY env var. Consumed by cli.js.
 
 require('dotenv').config();
 
@@ -136,32 +131,6 @@ async function chat(userMessage, executor, priorHistory = []) {
     .join('\n');
 
   return { finalText, history: messages };
-}
-
-// === Example Usage ===
-
-async function main() {
-  const { buildExecutor } = require('./bootstrap');
-  const executor = buildExecutor();
-
-  // Example queries
-  const queries = [
-    'Compare taxes for social housing organizations across Bordeaux metro (33000, 33520, 33800). What\'s the cheapest?',
-    'Best location for 500m² commercial office + 100m² parking in Bordeaux. Need growth + low taxes. Options?',
-  ];
-
-  for (const query of queries) {
-    try {
-      await chat(query, executor);
-    } catch (err) {
-      console.error('Chat error:', err);
-    }
-  }
-}
-
-// Run if directly invoked
-if (require.main === module) {
-  main().catch(console.error);
 }
 
 module.exports = { chat };
