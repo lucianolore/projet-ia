@@ -316,6 +316,67 @@ function onKeydown(e: KeyboardEvent) {
   border-bottom-left-radius: 3px;
 }
 
+/* Markdown */
+.msg-bubble :deep(h1),
+.msg-bubble :deep(h2),
+.msg-bubble :deep(h3) {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 10px 0 4px;
+  letter-spacing: -0.01em;
+}
+.msg-bubble :deep(h1) { font-size: 15px; }
+.msg-bubble :deep(h2) { font-size: 13.5px; }
+.msg-bubble :deep(h3) { font-size: 12.5px; }
+.msg-bubble :deep(p) { margin: 4px 0; }
+.msg-bubble :deep(p:first-child) { margin-top: 0; }
+.msg-bubble :deep(p:last-child)  { margin-bottom: 0; }
+.msg-bubble :deep(strong) { font-weight: 600; color: var(--text-primary); }
+.msg-bubble :deep(code) {
+  font-family: var(--font-data);
+  font-size: 11.5px;
+  background: rgba(240, 62, 142, 0.08);
+  border: 1px solid rgba(240, 62, 142, 0.14);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.msg-bubble :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.msg-bubble :deep(th) {
+  background: rgba(240, 62, 142, 0.07);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 5px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-muted);
+}
+.msg-bubble :deep(td) {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+.msg-bubble :deep(tr:last-child td) { border-bottom: none; }
+.msg-bubble :deep(ul),
+.msg-bubble :deep(ol) { margin: 4px 0; padding-left: 18px; }
+.msg-bubble :deep(li) { margin: 2px 0; }
+.msg-bubble :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--border-light);
+  margin: 8px 0;
+}
+.msg-bubble :deep(blockquote) {
+  border-left: 3px solid rgba(240, 62, 142, 0.4);
+  margin: 6px 0;
+  padding: 4px 10px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .msg-bubble--typing {
   display: flex;
   align-items: center;
