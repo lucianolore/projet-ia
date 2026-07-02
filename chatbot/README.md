@@ -23,25 +23,14 @@ cp .env.example .env
 ```
 
 ```bash
-npm run server
-# serveur sur http://localhost:3000
-```
-
-```bash
-npm run chat
-# lance 2 requêtes d'exemple en CLI directe
+npm run cli
+# REPL interactif, appelle Claude directement — pas de serveur HTTP
+# commandes : "exit"/"quit" pour sortir, "reset" pour vider l'historique
 ```
 
 ```bash
 npm test
 # vérifie les tools sans LLM (taxes:* en direct sur l'API OFGL)
-```
-
-Appel HTTP :
-```bash
-curl -X POST http://localhost:3000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Compare le taux de taxe foncière entre Bordeaux et Bruges en 2025"}'
 ```
 
 ## Architecture
@@ -56,7 +45,7 @@ ofgl-client.js                ← Client REST direct vers l'API OFGL REI
 │   ├── DatagouvAdapter.js   ← wrap du MCP data.gouv.fr officiel
 │   └── LocalTaxesAdapter.js ← wrap de l'API OFGL REI (taxes locales réelles)
 │
-chatbot-server.js           ← Serveur Express
+cli.js                       ← Point d'entrée : REPL interactif, historique en mémoire
 claude-integration.js       ← Client Claude (boucle agentique tool_use)
 tool-definitions.json       ← Schémas d'outils pour Claude
 system-prompt.md            ← Instructions système Claude

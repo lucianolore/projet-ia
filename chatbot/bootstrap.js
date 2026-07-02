@@ -1,6 +1,5 @@
 // Single source of truth: builds the executor with all adapters registered.
-// Both chatbot-server.js and claude-integration.js import this instead of
-// duplicating adapter wiring / tool definitions.
+// cli.js imports this instead of duplicating adapter wiring / tool definitions.
 
 const ToolExecutor = require('./executor');
 const DatagouvAdapter = require('./adapters/DatagouvAdapter');
