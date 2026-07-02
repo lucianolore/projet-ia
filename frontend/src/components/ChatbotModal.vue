@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+
+marked.setOptions({ breaks: true })
+function renderMd(text: string): string {
+  return DOMPurify.sanitize(marked.parse(text) as string)
+}
 
 const emit = defineEmits<{ close: [] }>()
+
+const API = 'http://localhost:3000'
+const SESSION_ID = 'chatbot-modal'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -32,12 +42,22 @@ async function send() {
   loading.value = true
   await scrollToBottom()
 
-  // TODO: remplacer par l'appel réel à Claude API + MCP data pipeline
-  await new Promise(r => setTimeout(r, 900))
-  messages.value.push({
-    role: 'assistant',
-    text: 'Fonctionnalité en cours de développement. Le pipeline IA sera connecté prochainement.',
-  })
+  try {
+    const res = await fetch(`${API}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, sessionId: SESSION_ID }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const json = await res.json()
+    messages.value.push({ role: 'assistant', text: json.response })
+  } catch (e) {
+    messages.value.push({
+      role: 'assistant',
+      text: `Erreur serveur IA : ${e instanceof Error ? e.message : 'inconnue'}. Vérifiez que node local-server.js tourne sur le port 3000.`,
+    })
+  }
+
   loading.value = false
   await scrollToBottom()
 }
@@ -87,9 +107,11 @@ function onKeydown(e: KeyboardEvent) {
             class="msg-row"
             :class="`msg-row--${msg.role}`"
           >
-            <div class="msg-bubble" :class="`msg-bubble--${msg.role}`">
-              {{ msg.text }}
-            </div>
+            <div
+              class="msg-bubble"
+              :class="`msg-bubble--${msg.role}`"
+              v-html="renderMd(msg.text)"
+            />
           </div>
 
           <div v-if="loading" class="msg-row msg-row--assistant">

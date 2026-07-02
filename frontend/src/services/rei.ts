@@ -96,6 +96,12 @@ export async function fetchTerritoireData(territory: Territory, annee = '2024'):
   return { meta, indicateurs, annee, ta: null, dispositifs, epciDetails: null, cfeFocusVars: {} }
 }
 
+const CFE_FOCUS_VARS = [
+  'BAMINTCT1', 'BAMINTCT2', 'BAMINTCT3', 'BAMINTCT4', 'BAMINTCT5', 'BAMINTCT6',
+  'BAMINTPT1', 'BAMINTPT2', 'BAMINTPT3', 'BAMINTPT4', 'BAMINTPT5',
+  'V31', 'V31aa', 'V31a', 'V31b', 'V31c', 'V31d', 'V31e', 'V31f',
+]
+
 export async function fetchCfeFocusVars(
   siren: string,
   annee: string,
