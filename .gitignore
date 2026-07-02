@@ -1,0 +1,71 @@
+# ── OS ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editors ──────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.sw?
+*.sln
+
+# ── Node ─────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.local
+
+# ── Build outputs ────────────────────────────────────
+dist/
+dist-ssr/
+build/
+.output/
+
+# ── TypeScript ───────────────────────────────────────
+*.tsbuildinfo
+
+# ── Vite ─────────────────────────────────────────────
+*.timestamp-*.mjs
+
+# ── Test / coverage ──────────────────────────────────
+coverage/
+__screenshots__/
+/cypress/videos/
+/cypress/screenshots/
+
+# ── Lint cache ───────────────────────────────────────
+.eslintcache
+.oxlintcache
+
+# ── Environment — NEVER commit secrets ───────────────
+.env
+.env.*
+!.env.example
+
+# ── Python (backend prévu) ───────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Data / ingestion CSV/Excel (REI, OFGL, Banatic) ──
+data/raw/
+data/tmp/
+*.csv
+*.xlsx
+*.xls
+!data/samples/
+
+# ── Logs ─────────────────────────────────────────────
+logs/
+*.log

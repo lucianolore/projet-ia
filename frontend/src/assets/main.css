@@ -1,0 +1,95 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Shell */
+  --shell-bg: #0C0C32;
+  --shell-accent: #3531E9;
+
+  /* Panel */
+  --panel-bg: #F4F4FC;
+  --panel-border: #E0E0F0;
+  --panel-shadow: 0 0 80px rgba(0, 0, 0, 0.45), 0 0 1px rgba(27, 26, 122, 0.15);
+
+  /* Typography */
+  --text-primary: #1B1A7A;
+  --text-secondary: #78909C;
+  --text-muted: #808080;
+  --text-gold: #3531E9;
+  --text-inverse: #FFFFFF;
+
+  /* Surfaces */
+  --surface-hover: #EAEAF8;
+  --chip-bg: #F0F0FA;
+  --chip-active-bg: #1B1A7A;
+  --chip-active-text: #FFFFFF;
+
+  /* Borders */
+  --border-light: #E0E0F0;
+  --border-muted: #C8C8E8;
+
+  /* Fonts */
+  --font-display: 'Poppins', sans-serif;
+  --font-ui: 'Poppins', sans-serif;
+  --font-data: 'Roboto Mono', monospace;
+
+  /* Motion */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--shell-bg);
+}
+
+#app {
+  height: 100%;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* MapLibre overrides */
+.maplibregl-ctrl-attrib {
+  font-family: var(--font-data) !important;
+  font-size: 10px !important;
+  background: rgba(12, 12, 50, 0.65) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  border-radius: 4px 0 0 0 !important;
+  padding: 2px 6px !important;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: rgba(53, 49, 233, 0.8) !important;
+}
+
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  background: transparent !important;
+}
+
+.maplibregl-ctrl-logo {
+  display: none !important;
+}
+
+.maplibregl-ctrl-group {
+  background: rgba(244, 244, 252, 0.96) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15) !important;
+  overflow: hidden !important;
+}
+
+.maplibregl-ctrl-group button {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--border-light) !important;
+}
