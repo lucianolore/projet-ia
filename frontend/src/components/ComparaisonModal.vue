@@ -44,7 +44,7 @@ const fmtAmount = (v: number | null) => {
 const fmtEvol = (v24: number | null, v25: number | null): { text: string; sign: 'up' | 'down' | 'eq' } | null => {
   if (v24 == null || v25 == null || v24 === 0) return null
   const pct = ((v25 - v24) / v24) * 100
-  if (Math.abs(pct) < 0.01) return { text: '=', sign: 'eq' }
+  if (Math.abs(pct) < 0.05) return { text: '=', sign: 'eq' }
   const sign = pct > 0 ? 'up' : 'down'
   return { text: (pct > 0 ? '+' : '') + pct.toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' %', sign }
 }
