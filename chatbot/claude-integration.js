@@ -23,7 +23,16 @@ const client = new Anthropic({
 
 const SYSTEM_PROMPT = fs.readFileSync(path.join(__dirname, 'system-prompt.md'), 'utf-8');
 
-// === Tool Executor (stub integration) ===
+// Anthropic tool names must match ^[a-zA-Z0-9_-]{1,128}$ - no ':'. Map "source:tool" <-> "source__tool".
+const ANTHROPIC_TOOLS = TOOL_DEFINITIONS.map((tool) => ({
+  name: tool.name.replace(':', '__'),
+  description: tool.description,
+  input_schema: tool.input_schema,
+}));
+
+function toRealToolName(anthropicName) {
+  return anthropicName.replace('__', ':');
+}
 
 class ToolExecutorForClaude {
   constructor(executor) {
@@ -32,7 +41,7 @@ class ToolExecutorForClaude {
 
   async execute(toolName, toolInput) {
     // Dispatch to our executor
-    const result = await this.executor.execute(toolName, toolInput);
+    const result = await this.executor.execute(toRealToolName(toolName), toolInput);
     // Claude expects result as string or JSON
     return JSON.stringify(result, null, 2);
   }
@@ -40,9 +49,9 @@ class ToolExecutorForClaude {
 
 // === Main Chat Loop ===
 
-async function chat(userMessage, executor) {
+async function chat(userMessage, executor, priorHistory = []) {
   const toolExecutor = new ToolExecutorForClaude(executor);
-  const messages = [{ role: 'user', content: userMessage }];
+  const messages = [...priorHistory, { role: 'user', content: userMessage }];
 
   console.log(`\n📝 User: ${userMessage}\n`);
 
@@ -59,7 +68,7 @@ async function chat(userMessage, executor) {
       model: CLAUDE_MODEL,
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
-      tools: TOOL_DEFINITIONS,
+      tools: ANTHROPIC_TOOLS,
       messages,
     });
 
@@ -74,7 +83,7 @@ async function chat(userMessage, executor) {
         console.log(`\n🤖 Claude: ${block.text}\n`);
       } else if (block.type === 'tool_use') {
         hasToolUse = true;
-        const toolName = block.name;
+        const toolName = toRealToolName(block.name);
         const toolInput = block.input;
 
         console.log(`\n⚙️  Tool call: ${toolName}`);
