@@ -40,8 +40,12 @@ const EPCI_VARS: Record<Taxe, VarMap> = {
   THRS:  {},
   CFE:   { taux: 'P32', base: 'P31', produit: 'P33', produit_hab: 'P33', base_hab: 'P31', evolution: 'P32' },
   // produit_etab: source DGFiP "fichiers détaillés CFE" (ingestion offline requise) — champ réservé
-  TEOM:  { taux: 'F22GFP', produit: 'F23GFP', produit_hab: 'F23GFP', evolution: 'F22GFP' },
+  // TEOM EPCI : dans l'API REI, la TEOM est sous destinataire="Divers" (pas "GFP") avec var=F22/F23
+  TEOM:  { taux: 'F22', produit: 'F23', produit_hab: 'F23', evolution: 'F22' },
 }
+
+// Variables TEOM au niveau EPCI — destinataire="Divers" (pas "GFP") dans l'API REI OFGL
+const EPCI_TEOM_VARS = new Set(['F22', 'F23'])
 
 export function getVarCode(taxe: Taxe, metrique: Metrique, niveau: Niveau): string | null {
   const map = niveau === 'communes' ? COMMUNE_VARS : EPCI_VARS
@@ -76,7 +80,9 @@ function buildWhere(filters: CartoFilters, varCode: string, annee: string): stri
   parts.push(`var="${varCode}"`)
 
   if (niveau === 'epci') {
-    parts.push(`destinataire="GFP"`)
+    // La TEOM EPCI est sous destinataire="Divers" dans l'API REI, pas "GFP"
+    const destinataire = EPCI_TEOM_VARS.has(varCode) ? 'Divers' : 'GFP'
+    parts.push(`destinataire="${destinataire}"`)
     if (typeEpci) parts.push(`forjepci="${typeEpci}"`)
   } else {
     if (strates.length > 0) parts.push(`strate IN (${strates.join(',')})`)
@@ -200,7 +206,7 @@ export function computeDisplayValue(record: CartoRecord, metrique: Metrique): nu
     case 'produit_hab':
     case 'base_hab':
       if (valeur == null || !population || population === 0) return null
-      return (valeur * 1000) / population
+      return valeur / population
     case 'evolution':
       if (valeur == null || valeurN1 == null || valeurN1 === 0) return null
       return ((valeur - valeurN1) / Math.abs(valeurN1)) * 100
