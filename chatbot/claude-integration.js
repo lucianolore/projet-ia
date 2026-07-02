@@ -44,9 +44,10 @@ class ToolExecutorForClaude {
 
 // === Main Chat Loop ===
 
-async function chat(userMessage, executor, priorHistory = []) {
+async function chat(userMessage, executor, priorHistory = [], extraSystemPrompt = '') {
   const toolExecutor = new ToolExecutorForClaude(executor);
   const messages = [...priorHistory, { role: 'user', content: userMessage }];
+  const system = extraSystemPrompt ? `${SYSTEM_PROMPT}\n\n${extraSystemPrompt}` : SYSTEM_PROMPT;
 
   console.log(`\n📝 User: ${userMessage}\n`);
 
@@ -62,7 +63,7 @@ async function chat(userMessage, executor, priorHistory = []) {
     const response = await client.messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
+      system,
       tools: ANTHROPIC_TOOLS,
       messages,
     });
