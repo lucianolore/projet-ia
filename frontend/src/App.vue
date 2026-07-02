@@ -73,12 +73,14 @@ function onMouseUp() { endDrag() }
 
 function onTouchStart(e: TouchEvent) {
   const t = e.touches[0]
+  if (!t) return
   startDrag(t.clientX, t.clientY)
 }
 
 function onTouchMove(e: TouchEvent) {
   e.preventDefault()
   const t = e.touches[0]
+  if (!t) return
   moveDrag(t.clientX, t.clientY)
 }
 
