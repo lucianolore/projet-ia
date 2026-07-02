@@ -263,7 +263,13 @@ function formatVal(v: number | null): string {
   switch (m) {
     case 'taux':    return `${loc(v)} %`
     case 'base':
-    case 'produit': return `${loc(v, 0)} k€`
+    case 'produit': {
+      const abs = Math.abs(v)
+      if (abs >= 1_000_000_000) return (v / 1_000_000_000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' Md €'
+      if (abs >= 1_000_000)     return (v / 1_000_000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' M €'
+      if (abs >= 1_000)         return (v / 1_000).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' k€'
+      return loc(v, 0) + ' €'
+    }
     case 'base_hab':
     case 'produit_hab': return `${loc(v, 2)} €/hab`
     case 'evolution': return `${v >= 0 ? '+' : ''}${loc(v)} %`
@@ -294,6 +300,23 @@ function colorExpr(): unknown[] {
   }
   const [q1, q2, q3] = breaks.value
   const colors = classColors.value
+
+  // Si les breaks ne sont pas strictement croissants (ex: données insuffisantes ou uniformes),
+  // MapLibre rejetterait l'expression step avec des stops dupliqués.
+  if (q1 === q2 || q2 === q3 || q1 === q3) {
+    // Fallback : 2 classes autour de la médiane (ou 0 pour l'évolution)
+    const pivot = sortedVals.value.length > 0
+      ? sortedVals.value[Math.floor(sortedVals.value.length / 2)]!
+      : 0
+    return [
+      'step',
+      ['coalesce', ['feature-state', 'value'], -9999],
+      NO_DATA_COLOR,
+      -9998, colors[0],
+      pivot,  colors[3],
+    ]
+  }
+
   return [
     'step',
     ['coalesce', ['feature-state', 'value'], -9999],

@@ -98,8 +98,8 @@ const sections = computed((): Section[] => {
     if (cfeRows.length) result.push({ title: 'CFE (GFP)', rows: cfeRows })
 
     const teomGfpRows = []
-    if (ind.F22GFP) teomGfpRows.push({ label: 'Taux TEOM', value: fmtRate(ind.F22GFP.valeur), highlight: true })
-    if (ind.F23GFP) teomGfpRows.push({ label: 'Produit net lissé', value: fmtAmount(ind.F23GFP.valeur) })
+    if (ind.F22) teomGfpRows.push({ label: 'Taux TEOM', value: fmtRate(ind.F22.valeur), highlight: true })
+    if (ind.F23) teomGfpRows.push({ label: 'Produit net lissé', value: fmtAmount(ind.F23.valeur) })
     if (teomGfpRows.length) result.push({ title: 'TEOM (GFP)', rows: teomGfpRows })
 
     return result

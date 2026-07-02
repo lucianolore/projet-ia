@@ -7,28 +7,60 @@ const BASE = 'https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/rei/records
 const COMMUNE_VARS = ['E11', 'E12', 'E13', 'B11', 'B12', 'B13', 'F22', 'F23', 'H13THS', 'TXMAJOTHRS']
 
 // GFP (EPCI) intercommunality fiscal vars — destinataire="GFP" rows only
-const EPCI_VARS = ['E31', 'E32', 'E32VOTE', 'E33', 'B31', 'B32', 'B32VOTE', 'B33', 'P31', 'P32', 'P32VOTE', 'P33', 'F22GFP', 'F23GFP']
+const EPCI_GFP_VARS = ['E31', 'E32', 'E32VOTE', 'E33', 'B31', 'B32', 'B32VOTE', 'B33', 'P31', 'P32', 'P32VOTE', 'P33']
+// TEOM EPCI : dans l'API REI, la TEOM est sous destinataire="Divers" (pas "GFP") avec var=F22/F23
+const EPCI_TEOM_VARS = ['F22', 'F23']
+
+async function fetchEpciRows(
+  territory: Territory,
+  annee: string,
+  vars: string[],
+  destinataire: string,
+): Promise<Array<Record<string, unknown>>> {
+  const idFilter = `sirepci="${territory.code}" AND destinataire="${destinataire}"`
+  const varFilter = `var IN ("${vars.join('","')}")`
+  const where = `${idFilter} AND annee="${annee}" AND ${varFilter}`
+  const select = 'var,varlib,valeur,dispositif_fiscal,categorie,libcom,libdep,libreg,idcom,sirepci,gfp_ept,strate,forjepci,optepci'
+  const url = `${BASE}?where=${encodeURIComponent(where)}&select=${encodeURIComponent(select)}&limit=100&order_by=var`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`REI API ${res.status}`)
+  const json = await res.json()
+  return (json.results ?? []) as Array<Record<string, unknown>>
+}
 
 export async function fetchTerritoireData(territory: Territory, annee = '2024'): Promise<TerritoireData> {
   const isCommune = territory.type === 'commune'
-  const vars = isCommune ? COMMUNE_VARS : EPCI_VARS
-  const idFilter = isCommune
-    ? `idcom="${territory.code}"`
-    : `sirepci="${territory.code}" AND destinataire="GFP"`
-  const varFilter = `var IN ("${vars.join('","')}")`
 
-  const where = `${idFilter} AND annee="${annee}" AND ${varFilter}`
-  const select = 'var,varlib,valeur,dispositif_fiscal,categorie,libcom,libdep,libreg,idcom,sirepci,gfp_ept,strate,forjepci,optepci'
-  // EPCI: order_by=var ensures all 14 vars appear before limit=100 cuts off
-  const limit = isCommune ? 50 : 100
-  const orderBy = isCommune ? '' : '&order_by=var'
-  const url = `${BASE}?where=${encodeURIComponent(where)}&select=${encodeURIComponent(select)}&limit=${limit}${orderBy}`
+  let results: Array<Record<string, unknown>>
 
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`REI API ${res.status}`)
-
-  const json = await res.json()
-  const results = json.results as Array<Record<string, unknown>>
+  if (isCommune) {
+    const vars = COMMUNE_VARS
+    const idFilter = `idcom="${territory.code}"`
+    const varFilter = `var IN ("${vars.join('","')}")`
+    const where = `${idFilter} AND annee="${annee}" AND ${varFilter}`
+    const select = 'var,varlib,valeur,dispositif_fiscal,categorie,libcom,libdep,libreg,idcom,sirepci,gfp_ept,strate,forjepci,optepci'
+    const url = `${BASE}?where=${encodeURIComponent(where)}&select=${encodeURIComponent(select)}&limit=50`
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`REI API ${res.status}`)
+    const json = await res.json()
+    results = (json.results ?? []) as Array<Record<string, unknown>>
+  } else {
+    // EPCI : deux requêtes nécessaires — GFP (TFPB/TFPNB/CFE) + Divers (TEOM)
+    const [gfpRows, teomRows] = await Promise.all([
+      fetchEpciRows(territory, annee, EPCI_GFP_VARS, 'GFP'),
+      fetchEpciRows(territory, annee, EPCI_TEOM_VARS, 'Divers'),
+    ])
+    // Pour TEOM, l'API retourne une ligne par commune membre — on garde uniquement la première
+    // occurrence de chaque variable (le taux/produit de l'EPCI est le même sur toutes les lignes)
+    const seenTeomVars = new Set<string>()
+    const dedupTeom = teomRows.filter(r => {
+      const v = String(r.var)
+      if (seenTeomVars.has(v)) return false
+      seenTeomVars.add(v)
+      return true
+    })
+    results = [...gfpRows, ...dedupTeom]
+  }
 
   if (results.length === 0) throw new Error('Aucune donnée pour ce territoire en ' + annee)
 
