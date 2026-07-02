@@ -273,7 +273,7 @@ const sections = computed(() => {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(184,145,74,0.2) 100%);
+  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(240,62,142,0.2) 100%);
   z-index: 1;
 }
 
@@ -307,11 +307,11 @@ const sections = computed(() => {
 .modal-years {
   font-family: var(--font-data);
   font-size: 11px;
-  background: rgba(184, 145, 74, 0.1);
+  background: rgba(240, 62, 142, 0.1);
   color: var(--text-gold);
   padding: 2px 7px;
   border-radius: 4px;
-  border: 1px solid rgba(184, 145, 74, 0.2);
+  border: 1px solid rgba(240, 62, 142, 0.2);
 }
 
 .modal-close {
@@ -353,7 +353,7 @@ const sections = computed(() => {
   height: 8px;
   border-radius: 2px;
 }
-.legend-swatch--24 { background: rgba(184, 145, 74, 0.3); }
+.legend-swatch--24 { background: rgba(240, 62, 142, 0.3); }
 .legend-swatch--25 { background: var(--shell-accent); }
 
 .modal-divider {
@@ -447,7 +447,7 @@ const sections = computed(() => {
   border-radius: 4px;
   transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.bar-fill--24 { background: rgba(184, 145, 74, 0.35); }
+.bar-fill--24 { background: rgba(240, 62, 142, 0.35); }
 .bar-fill--25 { background: var(--shell-accent); }
 
 .bar-val {

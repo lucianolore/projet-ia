@@ -6,30 +6,30 @@
 
 :root {
   /* Shell */
-  --shell-bg: #0C0C32;
-  --shell-accent: #3531E9;
+  --shell-bg: #16080E;
+  --shell-accent: #F03E8E;
 
   /* Panel */
-  --panel-bg: #F4F4FC;
-  --panel-border: #E0E0F0;
-  --panel-shadow: 0 0 80px rgba(0, 0, 0, 0.45), 0 0 1px rgba(27, 26, 122, 0.15);
+  --panel-bg: #FFF8FB;
+  --panel-border: #F5D0E5;
+  --panel-shadow: 0 0 80px rgba(0, 0, 0, 0.45), 0 0 1px rgba(240, 62, 142, 0.15);
 
   /* Typography */
-  --text-primary: #1B1A7A;
-  --text-secondary: #78909C;
-  --text-muted: #808080;
-  --text-gold: #3531E9;
+  --text-primary: #1A0813;
+  --text-secondary: #9C6070;
+  --text-muted: #8A7280;
+  --text-gold: #F03E8E;
   --text-inverse: #FFFFFF;
 
   /* Surfaces */
-  --surface-hover: #EAEAF8;
-  --chip-bg: #F0F0FA;
-  --chip-active-bg: #1B1A7A;
+  --surface-hover: #FCE8F3;
+  --chip-bg: #FFF0F7;
+  --chip-active-bg: #F03E8E;
   --chip-active-text: #FFFFFF;
 
   /* Borders */
-  --border-light: #E0E0F0;
-  --border-muted: #C8C8E8;
+  --border-light: #F5D0E5;
+  --border-muted: #EDAAD2;
 
   /* Fonts */
   --font-display: 'Poppins', sans-serif;
@@ -59,14 +59,14 @@ html, body {
 .maplibregl-ctrl-attrib {
   font-family: var(--font-data) !important;
   font-size: 10px !important;
-  background: rgba(12, 12, 50, 0.65) !important;
+  background: rgba(22, 8, 14, 0.65) !important;
   color: rgba(255, 255, 255, 0.5) !important;
   border-radius: 4px 0 0 0 !important;
   padding: 2px 6px !important;
 }
 
 .maplibregl-ctrl-attrib a {
-  color: rgba(53, 49, 233, 0.8) !important;
+  color: rgba(240, 62, 142, 0.8) !important;
 }
 
 .maplibregl-ctrl-attrib.maplibregl-compact {
@@ -78,7 +78,7 @@ html, body {
 }
 
 .maplibregl-ctrl-group {
-  background: rgba(244, 244, 252, 0.96) !important;
+  background: rgba(255, 248, 251, 0.96) !important;
   border: 1px solid var(--border-light) !important;
   border-radius: 6px !important;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15) !important;

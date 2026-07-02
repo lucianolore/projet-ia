@@ -349,7 +349,7 @@ const listLabel = computed(() =>
 
 .cv-accent-bar {
   position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(184,145,74,0.2) 100%);
+  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(240,62,142,0.2) 100%);
   z-index: 1;
 }
 
@@ -385,7 +385,7 @@ const listLabel = computed(() =>
 .cv-search-wrap { position: relative; padding: 14px 28px 0; }
 .cv-search-icon { position: absolute; left: 40px; top: 50%; transform: translateY(-15%); color: var(--text-muted); pointer-events: none; }
 .cv-search { width: 100%; padding: 9px 12px 9px 34px; border-radius: 8px; border: 1px solid var(--border-muted); background: var(--chip-bg); color: var(--text-primary); font-family: var(--font-ui); font-size: 13px; outline: none; transition: border-color var(--transition-fast); box-sizing: border-box; }
-.cv-search:focus { border-color: rgba(184, 145, 74, 0.45); }
+.cv-search:focus { border-color: rgba(240, 62, 142, 0.45); }
 .cv-search::placeholder { color: var(--text-muted); }
 
 .cv-list-header { display: flex; align-items: center; gap: 8px; padding: 14px 28px 4px; }
@@ -394,7 +394,7 @@ const listLabel = computed(() =>
 
 .cv-list { flex: 1; overflow-y: auto; padding: 4px 28px 8px; scrollbar-width: thin; scrollbar-color: var(--border-light) transparent; }
 .cv-suggestion { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 11px 12px; border-radius: 8px; border: 1px solid var(--border-light); background: transparent; cursor: pointer; text-align: left; margin-bottom: 6px; transition: all var(--transition-fast); }
-.cv-suggestion:hover:not(:disabled) { border-color: rgba(184, 145, 74, 0.35); background: rgba(184, 145, 74, 0.04); }
+.cv-suggestion:hover:not(:disabled) { border-color: rgba(240, 62, 142, 0.35); background: rgba(240, 62, 142, 0.04); }
 .cv-suggestion:disabled { opacity: 0.5; cursor: not-allowed; }
 .cv-sug-body { display: flex; flex-direction: column; gap: 2px; }
 .cv-sug-name { font-family: var(--font-ui); font-size: 14px; font-weight: 500; color: var(--text-primary); }
