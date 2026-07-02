@@ -443,7 +443,7 @@ const listLabel = computed(() =>
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(184,145,74,0.2) 100%);
+  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(240,62,142,0.2) 100%);
   z-index: 1;
 }
 
@@ -616,7 +616,7 @@ const listLabel = computed(() =>
   box-sizing: border-box;
 }
 .cv-search:focus {
-  border-color: rgba(184, 145, 74, 0.45);
+  border-color: rgba(240, 62, 142, 0.45);
 }
 .cv-search::placeholder {
   color: var(--text-muted);
@@ -642,9 +642,9 @@ const listLabel = computed(() =>
 .cv-strate-chip {
   font-family: var(--font-data);
   font-size: 10px;
-  background: rgba(184, 145, 74, 0.1);
+  background: rgba(240, 62, 142, 0.1);
   color: var(--text-gold);
-  border: 1px solid rgba(184, 145, 74, 0.2);
+  border: 1px solid rgba(240, 62, 142, 0.2);
   padding: 2px 7px;
   border-radius: 4px;
 }
@@ -673,8 +673,8 @@ const listLabel = computed(() =>
   transition: all var(--transition-fast);
 }
 .cv-suggestion:hover:not(:disabled) {
-  border-color: rgba(184, 145, 74, 0.35);
-  background: rgba(184, 145, 74, 0.04);
+  border-color: rgba(240, 62, 142, 0.35);
+  background: rgba(240, 62, 142, 0.04);
 }
 .cv-suggestion:disabled {
   opacity: 0.5;

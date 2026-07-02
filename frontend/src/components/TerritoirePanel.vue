@@ -372,7 +372,7 @@ const dispositifRows = computed((): DispositifRow[] => {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, rgba(184,145,74,0.2) 0%, var(--shell-accent) 100%);
+  background: linear-gradient(90deg, rgba(240,62,142,0.2) 0%, var(--shell-accent) 100%);
   z-index: 1;
 }
 
@@ -469,16 +469,16 @@ const dispositifRows = computed((): DispositifRow[] => {
   gap: 8px;
   margin: 10px 24px 0;
   padding: 10px 12px;
-  background: rgba(184, 145, 74, 0.06);
-  border: 1px solid rgba(184, 145, 74, 0.18);
+  background: rgba(240, 62, 142, 0.06);
+  border: 1px solid rgba(240, 62, 142, 0.18);
   border-radius: 8px;
   color: var(--text-gold);
   cursor: pointer;
   transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 .tp-epci-badge:hover {
-  background: rgba(184, 145, 74, 0.12);
-  border-color: rgba(184, 145, 74, 0.35);
+  background: rgba(240, 62, 142, 0.12);
+  border-color: rgba(240, 62, 142, 0.35);
 }
 .tp-epci-badge svg { margin-top: 2px; flex-shrink: 0; }
 .tp-epci-name {
@@ -539,8 +539,8 @@ const dispositifRows = computed((): DispositifRow[] => {
 }
 
 .tp-year-btn--active {
-  background: rgba(184, 145, 74, 0.1);
-  border-color: rgba(184, 145, 74, 0.35) !important;
+  background: rgba(240, 62, 142, 0.1);
+  border-color: rgba(240, 62, 142, 0.35) !important;
   color: var(--text-gold) !important;
 }
 
@@ -567,7 +567,7 @@ const dispositifRows = computed((): DispositifRow[] => {
 .tp-chart-btn:hover:not(:disabled) {
   border-color: var(--shell-accent);
   color: var(--shell-accent);
-  background: rgba(184, 145, 74, 0.06);
+  background: rgba(240, 62, 142, 0.06);
 }
 
 .tp-chart-btn:disabled {
@@ -598,9 +598,9 @@ const dispositifRows = computed((): DispositifRow[] => {
 }
 
 .tp-compare-btn:hover {
-  border-color: rgba(184, 145, 74, 0.45);
+  border-color: rgba(240, 62, 142, 0.45);
   color: var(--text-gold);
-  background: rgba(184, 145, 74, 0.04);
+  background: rgba(240, 62, 142, 0.04);
 }
 
 /* --- Sections --- */

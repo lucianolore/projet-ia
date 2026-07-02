@@ -87,7 +87,8 @@ function clearQuery() {
     <!-- Header -->
     <header class="panel-header">
       <div class="brand">
-        <span class="brand-name">loré</span>
+        <img src="@/assets/logo.png" class="brand-logo" alt="Loré" />
+        <span class="brand-name">géofiscal</span>
         <span class="brand-tag">fiscalité locale</span>
       </div>
     </header>
@@ -229,7 +230,7 @@ function clearQuery() {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(184, 145, 74, 0.2) 100%);
+  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(240, 62, 142, 0.15) 100%);
   z-index: 1;
 }
 
@@ -241,7 +242,14 @@ function clearQuery() {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.brand-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .brand-name {
@@ -258,10 +266,10 @@ function clearQuery() {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-gold);
-  background: rgba(184, 145, 74, 0.1);
+  background: rgba(240, 62, 142, 0.08);
   padding: 3px 7px;
   border-radius: 4px;
-  border: 1px solid rgba(184, 145, 74, 0.2);
+  border: 1px solid rgba(240, 62, 142, 0.2);
 }
 
 /* --- Hero --- */

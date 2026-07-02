@@ -339,7 +339,7 @@ function addLayers(geojson: object) {
     paint: {
       'line-color': [
         'case', ['boolean', ['feature-state', 'hover'], false],
-        '#B8914A', 'rgba(255,255,255,0.35)',
+        '#F03E8E', 'rgba(255,255,255,0.35)',
       ],
       'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2.0, 0.5],
     },
@@ -733,7 +733,11 @@ function pickDept(d: { code: string; nom: string }) {
       <div class="sb-scroll">
         <!-- Brand -->
         <div class="sb-head">
-          <span class="sb-eyebrow">Loré</span>
+          <div class="sb-brand">
+            <img src="@/assets/logo.png" class="sb-brand-logo" alt="Géofiscal" />
+            <span class="sb-brand-name">géofiscal</span>
+            <span class="sb-brand-tag">fiscalité locale</span>
+          </div>
           <h1 class="sb-title">Analyse<br>fiscale</h1>
           <p class="sb-sub">Cartographie par territoire</p>
         </div>
@@ -1149,7 +1153,7 @@ function pickDept(d: { code: string; nom: string }) {
   gap: 7px;
   padding: 8px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(184, 145, 74, 0.3);
+  border: 1px solid rgba(240, 62, 142, 0.3);
   background: rgba(249, 246, 241, 0.92);
   color: var(--text-secondary);
   font-family: var(--font-ui);
@@ -1189,7 +1193,7 @@ function pickDept(d: { code: string; nom: string }) {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 2px solid rgba(184, 145, 74, 0.22);
+  border: 2px solid rgba(240, 62, 142, 0.22);
   border-top-color: var(--shell-accent);
   animation: spin 0.9s linear infinite;
 }
@@ -1228,7 +1232,7 @@ function pickDept(d: { code: string; nom: string }) {
   left: 20px;
   top: 20px;
   bottom: 20px;
-  width: 280px;
+  width: 340px;
   z-index: 10;
   background: var(--panel-bg);
   border-radius: 16px;
@@ -1242,7 +1246,7 @@ function pickDept(d: { code: string; nom: string }) {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: linear-gradient(90deg, rgba(184,145,74,0.15) 0%, var(--shell-accent) 55%, rgba(184,145,74,0.3) 100%);
+  background: linear-gradient(90deg, rgba(240,62,142,0.15) 0%, var(--shell-accent) 55%, rgba(240,62,142,0.3) 100%);
   z-index: 1;
 }
 
@@ -1256,14 +1260,38 @@ function pickDept(d: { code: string; nom: string }) {
 
 .sb-head { padding: 26px 22px 16px; }
 
-.sb-eyebrow {
-  display: block;
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sb-brand-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.sb-brand-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.sb-brand-tag {
   font-family: var(--font-data);
   font-size: 10px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--shell-accent);
-  margin-bottom: 6px;
+  color: var(--text-gold);
+  background: rgba(240, 62, 142, 0.08);
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(240, 62, 142, 0.2);
 }
 
 .sb-title {
@@ -1284,13 +1312,13 @@ function pickDept(d: { code: string; nom: string }) {
 
 .sb-sep {
   height: 2px;
-  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(53,49,233,0.12) 60%, transparent 100%);
+  background: linear-gradient(90deg, var(--shell-accent) 0%, rgba(240,62,142,0.12) 60%, transparent 100%);
   margin: 2px 0;
 }
 
 .sb-sep-sm {
   height: 1px;
-  background: linear-gradient(90deg, rgba(27,26,122,0.18) 0%, transparent 80%);
+  background: linear-gradient(90deg, rgba(240,62,142,0.18) 0%, transparent 80%);
   margin: 0 -22px 8px;
 }
 
@@ -1368,8 +1396,8 @@ function pickDept(d: { code: string; nom: string }) {
 }
 
 .territory-item--on {
-  background: rgba(184, 145, 74, 0.08);
-  border-color: rgba(184, 145, 74, 0.25);
+  background: rgba(240, 62, 142, 0.08);
+  border-color: rgba(240, 62, 142, 0.25);
   color: var(--text-primary);
 }
 
@@ -1461,8 +1489,8 @@ function pickDept(d: { code: string; nom: string }) {
 }
 
 .taxe-btn--on {
-  background: rgba(184, 145, 74, 0.07);
-  border-color: rgba(184, 145, 74, 0.3);
+  background: rgba(240, 62, 142, 0.07);
+  border-color: rgba(240, 62, 142, 0.3);
   color: var(--text-primary);
 }
 
@@ -1512,8 +1540,8 @@ function pickDept(d: { code: string; nom: string }) {
 }
 
 .ind-btn--on {
-  background: rgba(184, 145, 74, 0.07);
-  border-color: rgba(184, 145, 74, 0.22);
+  background: rgba(240, 62, 142, 0.07);
+  border-color: rgba(240, 62, 142, 0.22);
   color: var(--text-primary);
 }
 
@@ -1547,8 +1575,8 @@ function pickDept(d: { code: string; nom: string }) {
 .yr-btn:hover { border-color: var(--shell-accent); color: var(--text-secondary); }
 
 .yr-btn--on {
-  background: rgba(184, 145, 74, 0.1);
-  border-color: rgba(184, 145, 74, 0.35);
+  background: rgba(240, 62, 142, 0.1);
+  border-color: rgba(240, 62, 142, 0.35);
   color: var(--text-gold);
 }
 
@@ -1593,8 +1621,8 @@ function pickDept(d: { code: string; nom: string }) {
 .strate-chip:hover { border-color: var(--shell-accent); color: var(--text-secondary); }
 
 .strate-chip--on {
-  background: rgba(184, 145, 74, 0.1);
-  border-color: rgba(184, 145, 74, 0.4);
+  background: rgba(240, 62, 142, 0.1);
+  border-color: rgba(240, 62, 142, 0.4);
   color: var(--text-gold);
 }
 
@@ -1615,8 +1643,8 @@ function pickDept(d: { code: string; nom: string }) {
 .epci-type-btn:hover { border-color: var(--shell-accent); color: var(--text-secondary); }
 
 .epci-type-btn--on {
-  background: rgba(184, 145, 74, 0.1);
-  border-color: rgba(184, 145, 74, 0.35);
+  background: rgba(240, 62, 142, 0.1);
+  border-color: rgba(240, 62, 142, 0.35);
   color: var(--text-gold);
 }
 
@@ -1639,8 +1667,8 @@ function pickDept(d: { code: string; nom: string }) {
 }
 
 .stat-card--median {
-  background: rgba(184, 145, 74, 0.06);
-  border-color: rgba(184, 145, 74, 0.14);
+  background: rgba(240, 62, 142, 0.06);
+  border-color: rgba(240, 62, 142, 0.14);
 }
 
 .stat-lbl {
@@ -1821,7 +1849,7 @@ function pickDept(d: { code: string; nom: string }) {
 }
 
 .leg-row--clickable:hover {
-  background: rgba(184, 145, 74, 0.08);
+  background: rgba(240, 62, 142, 0.08);
 }
 
 .leg-row--clickable .leg-count {

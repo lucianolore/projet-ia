@@ -168,13 +168,13 @@ async function highlightCommune(code: string) {
       id: HL_FILL,
       type: 'fill',
       source: HL_SOURCE,
-      paint: { 'fill-color': '#B8914A', 'fill-opacity': 0.15 },
+      paint: { 'fill-color': '#F03E8E', 'fill-opacity': 0.15 },
     })
     mainMap.addLayer({
       id: HL_LINE,
       type: 'line',
       source: HL_SOURCE,
-      paint: { 'line-color': '#B8914A', 'line-width': 2, 'line-opacity': 0.9 },
+      paint: { 'line-color': '#F03E8E', 'line-width': 2, 'line-opacity': 0.9 },
     })
 
     const bounds = geojsonBounds(geojson.geometry?.coordinates ?? [])
@@ -261,12 +261,12 @@ onBeforeUnmount(() => {
 }
 
 .domtom-inset:hover {
-  border-color: rgba(184, 145, 74, 0.6);
+  border-color: rgba(240, 62, 142, 0.6);
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
 }
 
 .domtom-inset--metro {
-  border-color: rgba(184, 145, 74, 0.35);
+  border-color: rgba(240, 62, 142, 0.35);
 }
 
 .domtom-map {
