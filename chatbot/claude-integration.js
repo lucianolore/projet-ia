@@ -1,0 +1,158 @@
+// Claude API integration: Real implementation of chatbot orchestration
+// Requires: ANTHROPIC_API_KEY env var
+//
+// Usage:
+//   node claude-integration.js
+//
+// Or integrate into chatbot-server.js
+
+require('dotenv').config();
+
+const Anthropic = require('@anthropic-ai/sdk');
+const path = require('path');
+const fs = require('fs');
+const TOOL_DEFINITIONS = require('./tool-definitions.json');
+
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5';
+
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// === System Prompt ===
+
+const SYSTEM_PROMPT = fs.readFileSync(path.join(__dirname, 'system-prompt.md'), 'utf-8');
+
+// === Tool Executor (stub integration) ===
+
+class ToolExecutorForClaude {
+  constructor(executor) {
+    this.executor = executor;
+  }
+
+  async execute(toolName, toolInput) {
+    // Dispatch to our executor
+    const result = await this.executor.execute(toolName, toolInput);
+    // Claude expects result as string or JSON
+    return JSON.stringify(result, null, 2);
+  }
+}
+
+// === Main Chat Loop ===
+
+async function chat(userMessage, executor) {
+  const toolExecutor = new ToolExecutorForClaude(executor);
+  const messages = [{ role: 'user', content: userMessage }];
+
+  console.log(`\n📝 User: ${userMessage}\n`);
+
+  // Agentic loop: Claude calls tools, we execute, loop until no more tool calls
+  let loopCount = 0;
+  const maxLoops = 10;
+
+  while (loopCount < maxLoops) {
+    loopCount++;
+    console.log(`[Loop ${loopCount}]`);
+
+    // Call Claude with tools
+    const response = await client.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT,
+      tools: TOOL_DEFINITIONS,
+      messages,
+    });
+
+    console.log(`Stop reason: ${response.stop_reason}`);
+
+    // Collect Claude's response blocks
+    let hasToolUse = false;
+    const toolResults = [];
+
+    for (const block of response.content) {
+      if (block.type === 'text') {
+        console.log(`\n🤖 Claude: ${block.text}\n`);
+      } else if (block.type === 'tool_use') {
+        hasToolUse = true;
+        const toolName = block.name;
+        const toolInput = block.input;
+
+        console.log(`\n⚙️  Tool call: ${toolName}`);
+        console.log(`   Input: ${JSON.stringify(toolInput, null, 2)}`);
+
+        try {
+          const result = await toolExecutor.execute(toolName, toolInput);
+          console.log(`   Result: ${result.substring(0, 200)}...`);
+
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            content: result,
+          });
+        } catch (err) {
+          console.error(`   Error: ${err.message}`);
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            content: JSON.stringify({ error: err.message }),
+            is_error: true,
+          });
+        }
+      }
+    }
+
+    // Add Claude's response to messages
+    messages.push({ role: 'assistant', content: response.content });
+
+    // If no tool calls, Claude is done
+    if (!hasToolUse || response.stop_reason === 'end_turn') {
+      console.log('\n✅ Chat complete');
+      break;
+    }
+
+    // Add tool results and continue loop
+    if (toolResults.length > 0) {
+      messages.push({ role: 'user', content: toolResults });
+    }
+  }
+
+  if (loopCount >= maxLoops) {
+    console.log('\n⚠️  Max loops reached');
+  }
+
+  const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+  const finalText = (lastAssistant?.content || [])
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text)
+    .join('\n');
+
+  return { finalText, history: messages };
+}
+
+// === Example Usage ===
+
+async function main() {
+  const { buildExecutor } = require('./bootstrap');
+  const executor = buildExecutor();
+
+  // Example queries
+  const queries = [
+    'Compare taxes for social housing organizations across Bordeaux metro (33000, 33520, 33800). What\'s the cheapest?',
+    'Best location for 500m² commercial office + 100m² parking in Bordeaux. Need growth + low taxes. Options?',
+  ];
+
+  for (const query of queries) {
+    try {
+      await chat(query, executor);
+    } catch (err) {
+      console.error('Chat error:', err);
+    }
+  }
+}
+
+// Run if directly invoked
+if (require.main === module) {
+  main().catch(console.error);
+}
+
+module.exports = { chat };

@@ -1,0 +1,181 @@
+[
+  {
+    "name": "datagouv:search_datasets",
+    "description": "Search datasets on data.gouv.fr by keywords. Usually the first step. Use short, specific queries (AND logic - generic words like 'données' return zero results). Typical workflow: search_datasets -> list_dataset_resources -> query_resource_data.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string", "description": "Short specific search terms, e.g. 'DVF valeurs foncieres' or 'DPE logements'" },
+        "page": { "type": "integer", "description": "Page number (default 1)" },
+        "page_size": { "type": "integer", "description": "Results per page (default 20)" },
+        "sort": { "type": "string", "description": "created, last_update, reuses, followers, views. Prefix with '-' for descending, e.g. '-last_update'" },
+        "last_update_range": { "type": "string", "description": "Restrict to recently updated datasets: last_30_days, last_12_months, last_3_years" }
+      },
+      "required": ["query"]
+    }
+  },
+  {
+    "name": "datagouv:get_dataset_info",
+    "description": "Get detailed metadata about a specific dataset: title, description, organization, tags, resource count, dates, license.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "dataset_id": { "type": "string" }
+      },
+      "required": ["dataset_id"]
+    }
+  },
+  {
+    "name": "datagouv:list_dataset_resources",
+    "description": "List all resources (files) in a dataset: resource ID, title, format, size, URL. Next step: query_resource_data for CSV/XLSX, or fetch the URL directly for other formats.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "dataset_id": { "type": "string" }
+      },
+      "required": ["dataset_id"]
+    }
+  },
+  {
+    "name": "datagouv:get_resource_info",
+    "description": "Get detailed info about a specific resource (file): format, size, MIME type, URL, and whether the Tabular API (query_resource_data) is available for it.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "resource_id": { "type": "string" }
+      },
+      "required": ["resource_id"]
+    }
+  },
+  {
+    "name": "datagouv:query_resource_data",
+    "description": "Query tabular data (rows) from a resource via the Tabular API - works for CSV/XLSX, no download needed. Start with small page_size (20) to preview structure. Returns raw rows only; compute any stats/comparisons yourself from the results.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "resource_id": { "type": "string" },
+        "filter_column": { "type": "string", "description": "Column name to filter on, e.g. 'code_postal'" },
+        "filter_operator": { "type": "string", "enum": ["exact", "contains", "less", "greater", "strictly_less", "strictly_greater"], "description": "Default: exact" },
+        "filter_value": { "type": "string" },
+        "sort_column": { "type": "string" },
+        "sort_direction": { "type": "string", "enum": ["asc", "desc"], "description": "Default: asc" },
+        "page": { "type": "integer", "description": "Default 1" },
+        "page_size": { "type": "integer", "description": "Default 20" }
+      },
+      "required": ["resource_id"]
+    }
+  },
+  {
+    "name": "datagouv:search_organizations",
+    "description": "Find publishing organizations on data.gouv.fr (ministries, cities, INSEE, etc). Leave query empty to browse with pagination.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string", "description": "Acronym, ministry name, city, etc." },
+        "badge": { "type": "string", "enum": ["public-service", "certified", "association", "company", "local-authority"] },
+        "name": { "type": "string" },
+        "business_number_id": { "type": "string", "description": "SIREN/SIRET" },
+        "page": { "type": "integer" },
+        "page_size": { "type": "integer" },
+        "sort": { "type": "string", "description": "name, datasets, reuses, followers, views, created, last_modified (prefix '-' for descending)" }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "datagouv:search_dataservices",
+    "description": "Search third-party APIs (dataservices) cataloged on data.gouv.fr - these provide live programmatic access, unlike static dataset files. Workflow: search_dataservices -> get_dataservice_info -> get_dataservice_openapi_spec -> call the API directly.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string" },
+        "page": { "type": "integer" },
+        "page_size": { "type": "integer" }
+      },
+      "required": ["query"]
+    }
+  },
+  {
+    "name": "datagouv:get_dataservice_info",
+    "description": "Get metadata about a third-party API (dataservice): title, description, organization, base_api_url, documentation URL, license.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "dataservice_id": { "type": "string" }
+      },
+      "required": ["dataservice_id"]
+    }
+  },
+  {
+    "name": "datagouv:get_dataservice_openapi_spec",
+    "description": "Fetch and summarize the OpenAPI/Swagger spec for a dataservice: available endpoints and parameters. Use before calling base_api_url.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "dataservice_id": { "type": "string" }
+      },
+      "required": ["dataservice_id"]
+    }
+  },
+  {
+    "name": "datagouv:get_metrics",
+    "description": "Get usage metrics (visits, downloads) for a dataset or resource, monthly, most recent first. Requires dataset_id or resource_id. Production only.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "dataset_id": { "type": "string" },
+        "resource_id": { "type": "string" },
+        "limit": { "type": "integer", "description": "Default 12" }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "taxes:lookup_local_taxes",
+    "description": "Get real local tax data for a commune from OFGL's REI dataset (Recensement des Éléments d'Imposition): rates, tax base, revenue collected per tax type. Covers CFE, TH, FB, FNB, TEOM-TIEOM, CVAE, IFER, GEMAPI, TSE, TVA, etc. Aggregate commune-level fiscal data, NOT a per-business simulator - no parking tax exists in this dataset. Only annee 2024/2025 currently populated.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "commune": { "type": "string", "description": "Commune name, e.g. 'Bordeaux' (case/accent insensitive). WARNING: names aren't unique in France (homonym communes exist in different departments) - pass 'dep' or 'idcom' to disambiguate if the result flags ambiguity." },
+        "idcom": { "type": "string", "description": "INSEE commune code (5 digits), unambiguous, e.g. '33063' for Bordeaux. NOT the postal code." },
+        "dep": { "type": "string", "description": "Department code (e.g. '33' for Gironde), disambiguates homonym communes" },
+        "reg": { "type": "string", "description": "Region code" },
+        "annee": { "type": "string", "enum": ["2024", "2025"], "description": "Only 2024/2025 currently in this dataset" },
+        "dispositif_fiscal": {
+          "type": "string",
+          "description": "Tax type filter, e.g. CFE, TH, FB, FNB, TEOM-TIEOM, CVAE, IFER, GEMAPI-FB, TSE-TH, TVA, CHAMBRE-CFE. Omit to get all types for the commune."
+        },
+        "categorie": {
+          "type": "string",
+          "enum": ["Base", "Taux", "Produit", "Compensation", "Exoneration", "Degrevement", "Abattement", "Tarif", "Lissage", "Perequation"],
+          "description": "Taux = rate, Produit = revenue collected, Base = tax base"
+        },
+        "destinataire": {
+          "type": "string",
+          "description": "Who levies it: Commune, GFP (EPCI), Departement, Region, Divers, Etat, etc."
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "taxes:compare_taxes",
+    "description": "Compare real local tax data (from OFGL REI) across multiple communes for the same tax type/category. Returns rows per commune - a commune can have several rows (different destinataire/categorie), inspect them rather than assuming one number per commune.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "communes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of commune names, e.g. ['Bordeaux', 'Bruges', 'Merignac']"
+        },
+        "dep": { "type": "string", "description": "Department code, disambiguates homonym communes across the whole array" },
+        "annee": { "type": "string", "enum": ["2024", "2025"] },
+        "dispositif_fiscal": { "type": "string", "description": "e.g. 'FB' to compare property tax rates" },
+        "categorie": { "type": "string", "enum": ["Base", "Taux", "Produit", "Compensation", "Exoneration", "Degrevement", "Abattement", "Tarif", "Lissage", "Perequation"] },
+        "destinataire": { "type": "string" }
+      },
+      "required": ["communes"]
+    }
+  }
+]
