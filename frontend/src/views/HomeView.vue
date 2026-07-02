@@ -1,10 +1,23 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import MapExplorer from '@/components/MapExplorer.vue'
 import SearchPanel from '@/components/SearchPanel.vue'
 import TerritoirePanel from '@/components/TerritoirePanel.vue'
+import { useTerritoireStore } from '@/stores/territoire'
 
 const router = useRouter()
+const route = useRoute()
+const store = useTerritoireStore()
+
+onMounted(() => {
+  const code = route.query.territoire as string | undefined
+  const type = route.query.type as string | undefined
+  const nom = route.query.nom as string | undefined
+  if (code && (type === 'commune' || type === 'epci')) {
+    store.select({ id: code, name: nom ?? code, type, region: '', code })
+  }
+})
 </script>
 
 <template>
@@ -32,6 +45,7 @@ const router = useRouter()
   overflow: hidden;
   background: var(--shell-bg);
 }
+
 
 .nav-carto {
   position: absolute;

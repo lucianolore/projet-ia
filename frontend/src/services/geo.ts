@@ -1,4 +1,4 @@
-import type { Territory } from '@/types/territoire'
+import type { Territory, EpciDetails } from '@/types/territoire'
 
 const GEO_API = 'https://geo.api.gouv.fr'
 
@@ -232,6 +232,29 @@ async function searchEpci(query: string, limit: number): Promise<Territory[]> {
     region: e.departements?.[0]?.nom ?? '',
     code: e.code,
   }))
+}
+
+export async function fetchEpciDetails(siren: string): Promise<EpciDetails> {
+  const [epciRes, communesRes] = await Promise.allSettled([
+    fetch(`${GEO_API}/epcis/${siren}?fields=population,surface`),
+    fetch(`${GEO_API}/epcis/${siren}/communes?fields=code&limit=1000`),
+  ])
+
+  let population: number | null = null
+  let surface: number | null = null
+  if (epciRes.status === 'fulfilled' && epciRes.value.ok) {
+    const data = await epciRes.value.json()
+    population = data.population ?? null
+    surface = data.surface ?? null
+  }
+
+  let nbCommunes: number | null = null
+  if (communesRes.status === 'fulfilled' && communesRes.value.ok) {
+    const data = await communesRes.value.json()
+    nbCommunes = Array.isArray(data) ? data.length : null
+  }
+
+  return { population, nbCommunes, surface }
 }
 
 export async function fetchDefaultEpcis(): Promise<Territory[]> {

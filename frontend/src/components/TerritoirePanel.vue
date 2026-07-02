@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTerritoireStore } from '@/stores/territoire'
-import type { TerritoireData, IndicateurBoolean, IndicateurCategorical } from '@/types/territoire'
+import type { IndicateurBoolean, IndicateurCategorical } from '@/types/territoire'
 import ComparaisonModal from '@/components/ComparaisonModal.vue'
 import ComparaisonVilles from '@/components/ComparaisonVilles.vue'
 import ComparaisonEpci from '@/components/ComparaisonEpci.vue'
+import ComparaisonMulti from '@/components/ComparaisonMulti.vue'
+import AiChatPanel from '@/components/AiChatPanel.vue'
 
 const store = useTerritoireStore()
 
@@ -23,6 +25,13 @@ const FORJ_LABELS: Record<string, string> = {
   EPT: 'Établissement Public Territorial',
 }
 
+const OPTEPCI_LABELS: Record<string, string> = {
+  FPU: 'Fiscalité Professionnelle Unique',
+  FA: 'Fiscalité Additionnelle',
+  FPZ: 'Fiscalité Professionnelle de Zone',
+  FPE: 'Fiscalité Éolienne Unique',
+}
+
 const fmtRate = (v: number | null) =>
   v == null ? '—' : v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %'
 
@@ -33,6 +42,18 @@ const fmtAmount = (v: number | null) => {
   if (abs >= 1_000_000) return (v / 1_000_000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' M €'
   if (abs >= 1_000) return (v / 1_000).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' k€'
   return v.toLocaleString('fr-FR') + ' €'
+}
+
+const fmtPop = (v: number | null) =>
+  v == null ? '—' : v.toLocaleString('fr-FR') + ' hab.'
+
+const fmtSurface = (v: number | null) =>
+  v == null ? '—' : v.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' km²'
+
+const fmtProduitHab = (produit: number | null, pop: number | null) => {
+  if (produit == null || pop == null || pop === 0) return null
+  const val = (produit * 1000) / pop // produit en k€, hab → €/hab
+  return val.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €/hab'
 }
 
 const isCommune = computed(() => store.selected?.type === 'commune')
@@ -76,31 +97,64 @@ const sections = computed((): Section[] => {
 
   if (!isCommune.value) {
     // EPCI (GFP) — intercommunality fiscal vars
+    const pop = d.epciDetails?.population ?? null
+
     const fbRows = []
     if (ind.E32) fbRows.push({ label: 'Taux net', value: fmtRate(ind.E32.valeur), highlight: true })
     if (ind.E32VOTE) fbRows.push({ label: 'Taux voté', value: fmtRate(ind.E32VOTE.valeur) })
     if (ind.E31) fbRows.push({ label: 'Base nette', value: fmtAmount(ind.E31.valeur) })
     if (ind.E33) fbRows.push({ label: 'Produit', value: fmtAmount(ind.E33.valeur) })
-    if (fbRows.length) result.push({ title: 'Foncier bâti (GFP)', rows: fbRows })
+    const fbHab = fmtProduitHab(ind.E33?.valeur ?? null, pop)
+    if (fbHab) fbRows.push({ label: 'Produit / habitant', value: fbHab })
+    if (fbRows.length) result.push({ title: 'TFPB (GFP)', rows: fbRows })
 
     const fnbRows = []
     if (ind.B32) fnbRows.push({ label: 'Taux net', value: fmtRate(ind.B32.valeur), highlight: true })
     if (ind.B32VOTE) fnbRows.push({ label: 'Taux voté', value: fmtRate(ind.B32VOTE.valeur) })
     if (ind.B31) fnbRows.push({ label: 'Base nette', value: fmtAmount(ind.B31.valeur) })
     if (ind.B33) fnbRows.push({ label: 'Produit', value: fmtAmount(ind.B33.valeur) })
-    if (fnbRows.length) result.push({ title: 'Foncier non bâti (GFP)', rows: fnbRows })
+    const fnbHab = fmtProduitHab(ind.B33?.valeur ?? null, pop)
+    if (fnbHab) fnbRows.push({ label: 'Produit / habitant', value: fnbHab })
+    if (fnbRows.length) result.push({ title: 'TFPNB (GFP)', rows: fnbRows })
 
     const cfeRows = []
     if (ind.P32) cfeRows.push({ label: 'Taux net', value: fmtRate(ind.P32.valeur), highlight: true })
     if (ind.P32VOTE) cfeRows.push({ label: 'Taux voté', value: fmtRate(ind.P32VOTE.valeur) })
     if (ind.P31) cfeRows.push({ label: 'Base nette', value: fmtAmount(ind.P31.valeur) })
     if (ind.P33) cfeRows.push({ label: 'Produit', value: fmtAmount(ind.P33.valeur) })
+    const cfeHab = fmtProduitHab(ind.P33?.valeur ?? null, pop)
+    if (cfeHab) cfeRows.push({ label: 'Produit / habitant', value: cfeHab })
+    if (ind.P34?.valeur) {
+      cfeRows.push({ label: 'Établissements imposés', value: ind.P34.valeur.toLocaleString('fr-FR') })
+      if (ind.P33?.valeur != null) {
+        const moy = (ind.P33.valeur * 1000) / ind.P34.valeur
+        cfeRows.push({ label: 'Produit moy. / établissement', value: moy.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €/étab.' })
+      }
+    }
     if (cfeRows.length) result.push({ title: 'CFE (GFP)', rows: cfeRows })
 
     const teomGfpRows = []
-    if (ind.F22) teomGfpRows.push({ label: 'Taux TEOM', value: fmtRate(ind.F22.valeur), highlight: true })
-    if (ind.F23) teomGfpRows.push({ label: 'Produit net lissé', value: fmtAmount(ind.F23.valeur) })
+    if (ind.F22GFP) teomGfpRows.push({ label: 'Taux TEOM', value: fmtRate(ind.F22GFP.valeur), highlight: true })
+    if (ind.F23GFP) teomGfpRows.push({ label: 'Produit net lissé', value: fmtAmount(ind.F23GFP.valeur) })
+    const teomHab = fmtProduitHab(ind.F23GFP?.valeur ?? null, pop)
+    if (teomHab) teomGfpRows.push({ label: 'Produit / habitant', value: teomHab })
     if (teomGfpRows.length) result.push({ title: 'TEOM (GFP)', rows: teomGfpRows })
+
+    const gemapiRows = []
+    if (ind.E52gGEMAPI) gemapiRows.push({ label: 'Taux FB', value: fmtRate(ind.E52gGEMAPI.valeur), highlight: true })
+    if (ind.E53gGEMAPI) gemapiRows.push({ label: 'Produit FB', value: fmtAmount(ind.E53gGEMAPI.valeur) })
+    if (ind.B52gGEMAPI) gemapiRows.push({ label: 'Taux FNB', value: fmtRate(ind.B52gGEMAPI.valeur), highlight: true })
+    if (ind.B53gGEMAPI) gemapiRows.push({ label: 'Produit FNB', value: fmtAmount(ind.B53gGEMAPI.valeur) })
+    const gemapiTotal = (ind.E53gGEMAPI?.valeur ?? 0) + (ind.B53gGEMAPI?.valeur ?? 0)
+    const gemapiHab = fmtProduitHab(gemapiTotal || null, pop)
+    if (gemapiHab) gemapiRows.push({ label: 'Produit total / habitant', value: gemapiHab })
+    if (gemapiRows.length) result.push({ title: 'GEMAPI', rows: gemapiRows })
+
+    const iferRows = []
+    if (ind.IFERGFP) iferRows.push({ label: 'Produit', value: fmtAmount(ind.IFERGFP.valeur), highlight: true })
+    const iferHab = fmtProduitHab(ind.IFERGFP?.valeur ?? null, pop)
+    if (iferHab) iferRows.push({ label: 'Produit / habitant', value: iferHab })
+    if (iferRows.length) result.push({ title: 'IFER (GFP)', rows: iferRows })
 
     return result
   }
@@ -137,6 +191,43 @@ const sections = computed((): Section[] => {
   }
 
   return result
+})
+
+// CFE bases minimum barème — tranches CA
+// BAMINTCT = base minimum temps complet (référence CGI art. 1647 D)
+// V31x = nb établissements par tranche, TC + TP consolidés
+const CFE_TRANCHES = [
+  { key: '1', label: '≤ 10 000 €',         v31keys: ['V31aa', 'V31a'] },
+  { key: '2', label: '10 001 – 32 600 €',   v31keys: ['V31b'] },
+  { key: '3', label: '32 601 – 100 000 €',  v31keys: ['V31c'] },
+  { key: '4', label: '100 001 – 250 000 €', v31keys: ['V31d'] },
+  { key: '5', label: '250 001 – 500 000 €', v31keys: ['V31e'] },
+  { key: '6', label: '> 500 000 €',         v31keys: ['V31f'] },
+]
+
+interface CfeBasesRow {
+  tranche: string
+  base: string
+  nbEtab: string
+}
+
+const cfeTotalEtabBM = computed((): number | null => {
+  if (isCommune.value || !store.data) return null
+  return store.data.cfeFocusVars.V31?.valeur ?? null
+})
+
+const cfeBasesRows = computed((): CfeBasesRow[] => {
+  if (isCommune.value || !store.data) return []
+  const vars = store.data.cfeFocusVars
+  return CFE_TRANCHES.map(t => {
+    const baseVal = vars[`BAMINTCT${t.key}`]?.valeur ?? null
+    const nbRaw = t.v31keys.reduce((sum, k) => sum + (vars[k]?.valeur ?? 0), 0)
+    return {
+      tranche: t.label,
+      base: fmtAmount(baseVal),
+      nbEtab: nbRaw > 0 ? nbRaw.toLocaleString('fr-FR') : '—',
+    }
+  }).filter(r => r.base !== '—' || r.nbEtab !== '—')
 })
 
 type DispositifRow =
@@ -198,6 +289,30 @@ const dispositifRows = computed((): DispositifRow[] => {
         <span v-if="strateLabel" class="tp-meta-strate">{{ strateLabel }}</span>
       </div>
 
+      <!-- EPCI infos générales -->
+      <div v-if="store.data && !isCommune" class="tp-epci-infos">
+        <div class="tp-epci-info-item">
+          <span class="tp-epci-info-label">Type</span>
+          <span class="tp-epci-info-value">{{ FORJ_LABELS[store.data.meta.forjepci] ?? store.data.meta.forjepci }}</span>
+        </div>
+        <div v-if="store.data.meta.optepci && store.data.meta.optepci !== 'null'" class="tp-epci-info-item">
+          <span class="tp-epci-info-label">Fiscalité</span>
+          <span class="tp-epci-info-value">{{ OPTEPCI_LABELS[store.data.meta.optepci] ?? store.data.meta.optepci }}</span>
+        </div>
+        <div v-if="store.data.epciDetails?.population != null" class="tp-epci-info-item">
+          <span class="tp-epci-info-label">Population</span>
+          <span class="tp-epci-info-value">{{ fmtPop(store.data.epciDetails.population) }}</span>
+        </div>
+        <div v-if="store.data.epciDetails?.nbCommunes != null" class="tp-epci-info-item">
+          <span class="tp-epci-info-label">Communes membres</span>
+          <span class="tp-epci-info-value">{{ store.data.epciDetails.nbCommunes }}</span>
+        </div>
+        <div v-if="store.data.epciDetails?.surface != null" class="tp-epci-info-item">
+          <span class="tp-epci-info-label">Surface</span>
+          <span class="tp-epci-info-value">{{ fmtSurface(store.data.epciDetails.surface) }}</span>
+        </div>
+      </div>
+
       <!-- EPCI membership -->
       <div v-if="epciLabel" class="tp-epci-badge" role="button" tabindex="0" @click="navigateToEpci()" @keydown.enter="navigateToEpci()">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -241,7 +356,7 @@ const dispositifRows = computed((): DispositifRow[] => {
         </div>
       </div>
 
-      <!-- Compare action -->
+      <!-- Actions -->
       <div v-if="store.data && !store.loading" class="tp-compare-row">
         <button v-if="isCommune" class="tp-compare-btn" @click="store.openComparaisonVilles()">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -256,6 +371,23 @@ const dispositifRows = computed((): DispositifRow[] => {
             <rect x="7.5" y="2" width="4.5" height="9" rx="1.2" stroke="currentColor" stroke-width="1.3"/>
           </svg>
           Comparer avec un EPCI similaire
+        </button>
+        <button class="tp-compare-btn tp-compare-btn--multi" @click="store.openMultiComparaison()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <rect x="1" y="2" width="3" height="9" rx="1" stroke="currentColor" stroke-width="1.3"/>
+            <rect x="5" y="2" width="3" height="9" rx="1" stroke="currentColor" stroke-width="1.3"/>
+            <rect x="9" y="2" width="3" height="9" rx="1" stroke="currentColor" stroke-width="1.3"/>
+          </svg>
+          Multi-comparaison (×5)
+        </button>
+        <button class="tp-ai-btn" @click="store.openAiChat()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <rect x="1" y="1" width="11" height="11" rx="2.5" stroke="currentColor" stroke-width="1.3"/>
+            <circle cx="4.5" cy="6" r="0.9" fill="currentColor"/>
+            <circle cx="8.5" cy="6" r="0.9" fill="currentColor"/>
+            <path d="M3.5 8.5C4 9.3 5.2 9.8 6.5 9.8s2.5-.5 3-1.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          Analyse IA
         </button>
       </div>
 
@@ -296,6 +428,28 @@ const dispositifRows = computed((): DispositifRow[] => {
           Aucun indicateur disponible pour cette période.
         </div>
 
+        <!-- Focus CFE — bases minimum barème -->
+        <div v-if="cfeBasesRows.length" class="tp-section tp-section--cfe-focus">
+          <h3 class="tp-section-title">Bases minimum CFE — barème</h3>
+          <div v-if="cfeTotalEtabBM != null" class="tp-cfe-total">
+            <span class="tp-cfe-total-label">Total établissements à la base minimum</span>
+            <span class="tp-cfe-total-val">{{ cfeTotalEtabBM.toLocaleString('fr-FR') }}</span>
+          </div>
+          <div class="tp-cfe-table">
+            <div class="tp-cfe-header">
+              <span>Tranche CA</span>
+              <span>Base min. (€)</span>
+              <span>Établissements</span>
+            </div>
+            <div v-for="row in cfeBasesRows" :key="row.tranche" class="tp-cfe-row">
+              <span class="tp-cfe-tranche">{{ row.tranche }}</span>
+              <span class="tp-cfe-val">{{ row.base }}</span>
+              <span class="tp-cfe-val">{{ row.nbEtab }}</span>
+            </div>
+          </div>
+          <p class="tp-cfe-footnote">Base temps complet — source REI/DGFiP</p>
+        </div>
+
         <!-- Dispositifs fiscaux -->
         <div v-if="dispositifRows.length" class="tp-section tp-section--dispositifs">
           <h3 class="tp-section-title">Dispositifs fiscaux</h3>
@@ -334,6 +488,8 @@ const dispositifRows = computed((): DispositifRow[] => {
   <ComparaisonModal v-if="store.showComparaison" />
   <ComparaisonVilles v-if="store.showComparaisonVilles" />
   <ComparaisonEpci v-if="store.showComparaisonEpci" />
+  <ComparaisonMulti v-if="store.showMultiComparaison" />
+  <AiChatPanel v-if="store.showAiChat" />
 </template>
 
 <style scoped>
@@ -462,6 +618,44 @@ const dispositifRows = computed((): DispositifRow[] => {
   color: var(--text-secondary);
 }
 
+/* --- EPCI infos générales --- */
+.tp-epci-infos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 10px 24px 0;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tp-epci-info-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  flex: 1 1 100%;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tp-epci-info-item:last-child {
+  border-bottom: none;
+}
+
+.tp-epci-info-label {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.tp-epci-info-value {
+  font-family: var(--font-data);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: right;
+}
+
 /* --- EPCI badge --- */
 .tp-epci-badge {
   display: flex;
@@ -578,6 +772,9 @@ const dispositifRows = computed((): DispositifRow[] => {
 /* --- Compare row --- */
 .tp-compare-row {
   padding: 10px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .tp-compare-btn {
@@ -601,6 +798,29 @@ const dispositifRows = computed((): DispositifRow[] => {
   border-color: rgba(240, 62, 142, 0.45);
   color: var(--text-gold);
   background: rgba(240, 62, 142, 0.04);
+}
+
+.tp-ai-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(240, 62, 142, 0.3);
+  background: rgba(240, 62, 142, 0.06);
+  color: var(--shell-accent);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tp-ai-btn:hover {
+  background: rgba(240, 62, 142, 0.12);
+  border-color: rgba(240, 62, 142, 0.55);
 }
 
 /* --- Sections --- */
@@ -713,6 +933,93 @@ const dispositifRows = computed((): DispositifRow[] => {
 .tp-error p {
   font-family: var(--font-ui);
   font-size: 13px;
+}
+
+/* --- Focus CFE barème --- */
+.tp-section--cfe-focus {
+  border-top: 1px solid var(--border-light);
+  margin-top: 14px;
+  padding-top: 16px;
+}
+
+.tp-cfe-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: var(--font-data);
+  font-size: 11px;
+}
+
+.tp-cfe-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 5px 8px;
+  background: var(--chip-bg);
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  gap: 4px;
+}
+
+.tp-cfe-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 6px 8px;
+  border-top: 1px solid var(--border-light);
+  gap: 4px;
+  align-items: center;
+}
+
+.tp-cfe-row:hover {
+  background: var(--surface-hover);
+}
+
+.tp-cfe-tranche {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.tp-cfe-val {
+  color: var(--text-primary);
+  font-weight: 500;
+  text-align: right;
+}
+
+.tp-cfe-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  background: var(--chip-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+}
+
+.tp-cfe-total-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.tp-cfe-total-val {
+  font-family: var(--font-data);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shell-accent);
+}
+
+.tp-cfe-footnote {
+  font-family: var(--font-data);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-align: right;
 }
 
 /* --- Dispositifs --- */

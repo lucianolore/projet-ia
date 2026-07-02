@@ -70,7 +70,7 @@ const EPCI_TYPES = [
   { key: 'CU', label: 'CU' }, { key: 'MET', label: 'Métropole' },
 ]
 
-const YEARS = ['2025', '2024', '2023'] as const
+const YEARS = ['2025', '2024'] as const
 type Annee = (typeof YEARS)[number]
 
 const SEQUENTIAL_COLORS = ['#D9EDD5', '#85C17E', '#3B8A4A', '#1A5730']
@@ -86,7 +86,7 @@ const DOM_REGIONS   = REGIONS.filter(r => r.dom)
 const mapContainer = ref<HTMLDivElement | null>(null)
 let map: maplibregl.Map | null = null
 let pendingGeojson: object | null = null
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 let cachedGeojson: { features: Array<{ properties?: Record<string, unknown> }> } | null = null
 
 const perimetreType    = ref<'region' | 'departement' | null>(null)
@@ -251,6 +251,14 @@ const modalItems = computed((): Array<{ name: string; code: string; value: numbe
   }
   return items.sort((a, b) => a.value - b.value)
 })
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+
+function openTerritoireTab(item: { name: string; code: string }) {
+  const type = selectedNiveau.value === 'epci' ? 'epci' : 'commune'
+  const url = router.resolve({ path: '/', query: { territoire: item.code, type, nom: item.name } }).href
+  window.open(url, '_blank', 'noopener')
+}
 
 // ─── Formatting ───────────────────────────────────────────────────────────────
 
@@ -1109,7 +1117,7 @@ function pickDept(d: { code: string; nom: string }) {
               <button class="class-modal-close" @click="modalClass = null">✕</button>
             </div>
             <div class="class-modal-list">
-              <div v-for="item in modalItems" :key="item.code" class="class-modal-row">
+              <div v-for="item in modalItems" :key="item.code" class="class-modal-row" @click="openTerritoireTab(item)">
                 <span class="class-modal-name">{{ item.name }}</span>
                 <span class="class-modal-val">{{ formatVal(item.value) }}</span>
               </div>
@@ -1291,10 +1299,10 @@ function pickDept(d: { code: string; nom: string }) {
 }
 
 .sb-brand-logo {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .sb-brand-name {
@@ -1581,7 +1589,7 @@ function pickDept(d: { code: string; nom: string }) {
 
 /* ── Year ────────────────────────────────────────────────────────────────── */
 
-.year-row { display: flex; gap: 4px; }
+.year-row { display: flex; gap: 4px; margin-bottom: 12px; }
 
 .yr-btn {
   font-family: var(--font-data);
@@ -1975,6 +1983,7 @@ function pickDept(d: { code: string; nom: string }) {
   padding: 7px 8px;
   border-radius: 6px;
   transition: background 100ms;
+  cursor: pointer;
 }
 
 .class-modal-row:hover { background: var(--surface-hover); }

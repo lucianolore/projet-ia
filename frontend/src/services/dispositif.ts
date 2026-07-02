@@ -16,7 +16,8 @@ export function getRegime(codeCommune: string): 'TLV' | 'THLV' {
  * Available:
  *   ZT         — Zone tendue (boolean, static)
  *   REGIME     — Régime applicable TLV/THLV (categorical, derived)
- *   THRS_INST  — Majoration THRS instaurée (boolean, derived from TXMAJOTHRS)
+ *   THRS_INST  — Majoration THRS instaurée (boolean, derived from TXMAJOTHRS > 0)
+ *   THRS_APPL  — Majoration THRS appliquée (boolean, derived from NBMAJOTHRS > 0)
  *   TXMAJOTHRS — Taux de majoration THRS (use ReiIndicateur directly)
  *
  * Not available in OFGL REI:
@@ -28,6 +29,7 @@ export function getDispositifs(
 ): Record<string, DispositifIndicateur> {
   const zt = estZoneTendue(codeCommune)
   const txMaj = indicateurs['TXMAJOTHRS']?.valeur
+  const nbMaj = indicateurs['NBMAJOTHRS']?.valeur
 
   const result: Record<string, DispositifIndicateur> = {
     ZT: {
@@ -51,6 +53,15 @@ export function getDispositifs(
       varlib: 'Majoration THRS instaurée',
       kind: 'boolean',
       valeur: txMaj != null ? txMaj > 0 : null,
+      categorie: 'Résidences secondaires',
+      dispositif_fiscal: 'THRS',
+    },
+    THRS_APPL: {
+      var: 'THRS_APPL',
+      varlib: 'Majoration THRS appliquée',
+      kind: 'boolean',
+      // NBMAJOTHRS = articles ayant effectivement un prélèvement supplémentaire
+      valeur: nbMaj != null ? nbMaj > 0 : null,
       categorie: 'Résidences secondaires',
       dispositif_fiscal: 'THRS',
     },

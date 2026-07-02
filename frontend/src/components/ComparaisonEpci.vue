@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useTerritoireStore } from '@/stores/territoire'
 import { fetchSimilarEpcis, searchTerritoires } from '@/services/geo'
-import type { Territory } from '@/types/territoire'
+import type { Territory, TerritoireData } from '@/types/territoire'
 
 const store = useTerritoireStore()
 
@@ -24,6 +24,13 @@ const FORJ_LABELS: Record<string, string> = {
   EPT: 'Établissement Public Territorial',
 }
 
+const OPTEPCI_LABELS: Record<string, string> = {
+  FPU: 'Fiscalité Professionnelle Unique',
+  FA: 'Fiscalité Additionnelle',
+  FPZ: 'Fiscalité Professionnelle de Zone',
+  FPE: 'Fiscalité Éolienne Unique',
+}
+
 const fmtRate = (v: number | null) =>
   v == null ? '—' : v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %'
 
@@ -36,7 +43,24 @@ const fmtAmount = (v: number | null) => {
   return v.toLocaleString('fr-FR') + ' €'
 }
 
-function fmt(v: number | null, format: 'rate' | 'amount') {
+const fmtPop = (v: number | null) =>
+  v == null ? '—' : v.toLocaleString('fr-FR') + ' hab.'
+
+const fmtCount = (v: number | null) =>
+  v == null ? '—' : v.toLocaleString('fr-FR')
+
+const fmtSurface = (v: number | null) =>
+  v == null ? '—' : v.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' km²'
+
+function fmtProduitHab(produit: number | null, pop: number | null): string {
+  if (produit == null || pop == null || pop === 0) return '—'
+  const val = (produit * 1000) / pop
+  return val.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €/hab'
+}
+
+type RowFormat = 'rate' | 'amount'
+
+function fmt(v: number | null, format: RowFormat) {
   return format === 'rate' ? fmtRate(v) : fmtAmount(v)
 }
 
@@ -48,6 +72,13 @@ function delta(a: number | null, b: number | null): { text: string; sign: 'up' |
     text: (pct > 0 ? '+' : '') + pct.toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' %',
     sign: pct > 0 ? 'up' : 'down',
   }
+}
+
+function produitHabValues(d: TerritoireData, key: string): number | null {
+  const produit = d.indicateurs[key]?.valeur ?? null
+  const pop = d.epciDetails?.population ?? null
+  if (produit == null || pop == null || pop === 0) return null
+  return (produit * 1000) / pop
 }
 
 onMounted(async () => {
@@ -88,35 +119,80 @@ function goBack() {
   searchResults.value = []
 }
 
-interface CompareRow { label: string; key: string; format: 'rate' | 'amount'; highlight?: boolean }
-interface CompareSection { title: string; rows: CompareRow[] }
+type CompareRowDef =
+  | { kind: 'var'; label: string; key: string; format: RowFormat; highlight?: boolean }
+  | { kind: 'produit_hab'; label: string; produitKey: string }
+  | { kind: 'produit_sum_hab'; label: string; keys: string[] }
+  | { kind: 'epci_info'; label: string; field: 'population' | 'nbCommunes' | 'surface' }
+  | { kind: 'epci_meta'; label: string; field: 'forjepci' | 'optepci' }
 
-const COMPARE_SECTIONS: CompareSection[] = [
+interface CompareSectionDef { title: string; rows: CompareRowDef[] }
+
+const COMPARE_SECTIONS: CompareSectionDef[] = [
   {
-    title: 'Foncier bâti (GFP)',
+    title: 'TFPB (GFP)',
     rows: [
-      { label: 'Taux net', key: 'E32', format: 'rate', highlight: true },
-      { label: 'Base nette', key: 'E31', format: 'amount' },
-      { label: 'Produit', key: 'E33', format: 'amount' },
+      { kind: 'var', label: 'Taux net', key: 'E32', format: 'rate', highlight: true },
+      { kind: 'var', label: 'Taux voté', key: 'E32VOTE', format: 'rate' },
+      { kind: 'var', label: 'Base nette', key: 'E31', format: 'amount' },
+      { kind: 'var', label: 'Produit', key: 'E33', format: 'amount' },
+      { kind: 'produit_hab', label: 'Produit / habitant', produitKey: 'E33' },
     ],
   },
   {
-    title: 'Foncier non bâti (GFP)',
+    title: 'TFPNB (GFP)',
     rows: [
-      { label: 'Taux net', key: 'B32', format: 'rate', highlight: true },
-      { label: 'Base nette', key: 'B31', format: 'amount' },
-      { label: 'Produit', key: 'B33', format: 'amount' },
+      { kind: 'var', label: 'Taux net', key: 'B32', format: 'rate', highlight: true },
+      { kind: 'var', label: 'Taux voté', key: 'B32VOTE', format: 'rate' },
+      { kind: 'var', label: 'Base nette', key: 'B31', format: 'amount' },
+      { kind: 'var', label: 'Produit', key: 'B33', format: 'amount' },
+      { kind: 'produit_hab', label: 'Produit / habitant', produitKey: 'B33' },
     ],
   },
   {
     title: 'CFE (GFP)',
     rows: [
-      { label: 'Taux net', key: 'P32', format: 'rate', highlight: true },
-      { label: 'Base nette', key: 'P31', format: 'amount' },
-      { label: 'Produit', key: 'P33', format: 'amount' },
+      { kind: 'var', label: 'Taux net', key: 'P32', format: 'rate', highlight: true },
+      { kind: 'var', label: 'Taux voté', key: 'P32VOTE', format: 'rate' },
+      { kind: 'var', label: 'Base nette', key: 'P31', format: 'amount' },
+      { kind: 'var', label: 'Produit', key: 'P33', format: 'amount' },
+      { kind: 'produit_hab', label: 'Produit / habitant', produitKey: 'P33' },
+    ],
+  },
+  {
+    title: 'TEOM (GFP)',
+    rows: [
+      { kind: 'var', label: 'Taux TEOM', key: 'F22GFP', format: 'rate', highlight: true },
+      { kind: 'var', label: 'Produit net lissé', key: 'F23GFP', format: 'amount' },
+      { kind: 'produit_hab', label: 'Produit / habitant', produitKey: 'F23GFP' },
+    ],
+  },
+  {
+    title: 'GEMAPI',
+    rows: [
+      { kind: 'var', label: 'Taux FB', key: 'E52gGEMAPI', format: 'rate', highlight: true },
+      { kind: 'var', label: 'Produit FB', key: 'E53gGEMAPI', format: 'amount' },
+      { kind: 'var', label: 'Taux FNB', key: 'B52gGEMAPI', format: 'rate', highlight: true },
+      { kind: 'var', label: 'Produit FNB', key: 'B53gGEMAPI', format: 'amount' },
+      { kind: 'produit_sum_hab', label: 'Produit total / habitant', keys: ['E53gGEMAPI', 'B53gGEMAPI'] },
+    ],
+  },
+  {
+    title: 'IFER (GFP)',
+    rows: [
+      { kind: 'var', label: 'Produit', key: 'IFERGFP', format: 'amount', highlight: true },
+      { kind: 'produit_hab', label: 'Produit / habitant', produitKey: 'IFERGFP' },
     ],
   },
 ]
+
+type RenderedRow = {
+  label: string
+  fmtA: string
+  fmtB: string
+  highlight: boolean
+  delta: { text: string; sign: 'up' | 'down' | 'eq' } | null
+}
 
 const compareSections = computed(() => {
   const dA = store.data
@@ -126,31 +202,152 @@ const compareSections = computed(() => {
   return COMPARE_SECTIONS
     .map(section => {
       const rows = section.rows
-        .map(row => {
-          const vA = dA.indicateurs[row.key]?.valeur ?? null
-          const vB = dB.indicateurs[row.key]?.valeur ?? null
+        .map((row): RenderedRow | null => {
+          if (row.kind === 'var') {
+            const vA = dA.indicateurs[row.key]?.valeur ?? null
+            const vB = dB.indicateurs[row.key]?.valeur ?? null
+            if (vA == null && vB == null) return null
+            return {
+              label: row.label,
+              fmtA: fmt(vA, row.format),
+              fmtB: fmt(vB, row.format),
+              highlight: row.highlight ?? false,
+              delta: row.highlight ? delta(vA, vB) : null,
+            }
+          }
+          if (row.kind === 'produit_hab') {
+            const vA = produitHabValues(dA, row.produitKey)
+            const vB = produitHabValues(dB, row.produitKey)
+            if (vA == null && vB == null) return null
+            return {
+              label: row.label,
+              fmtA: fmtProduitHab(dA.indicateurs[row.produitKey]?.valeur ?? null, dA.epciDetails?.population ?? null),
+              fmtB: fmtProduitHab(dB.indicateurs[row.produitKey]?.valeur ?? null, dB.epciDetails?.population ?? null),
+              highlight: false,
+              delta: delta(vA, vB),
+            }
+          }
+          if (row.kind === 'produit_sum_hab') {
+            const sumA = row.keys.reduce((s, k) => s + (dA.indicateurs[k]?.valeur ?? 0), 0)
+            const sumB = row.keys.reduce((s, k) => s + (dB.indicateurs[k]?.valeur ?? 0), 0)
+            const popA = dA.epciDetails?.population ?? null
+            const popB = dB.epciDetails?.population ?? null
+            const vA = sumA && popA ? (sumA * 1000) / popA : null
+            const vB = sumB && popB ? (sumB * 1000) / popB : null
+            if (vA == null && vB == null) return null
+            return {
+              label: row.label,
+              fmtA: vA != null ? vA.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €/hab' : '—',
+              fmtB: vB != null ? vB.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €/hab' : '—',
+              highlight: false,
+              delta: delta(vA, vB),
+            }
+          }
+          if (row.kind === 'epci_meta') {
+            const rawA = row.field === 'forjepci' ? dA.meta.forjepci : dA.meta.optepci
+            const rawB = row.field === 'forjepci' ? dB.meta.forjepci : dB.meta.optepci
+            const labelMap = row.field === 'forjepci' ? FORJ_LABELS : OPTEPCI_LABELS
+            const vA = rawA && rawA !== 'null' ? rawA : null
+            const vB = rawB && rawB !== 'null' ? rawB : null
+            if (vA == null && vB == null) return null
+            return {
+              label: row.label,
+              fmtA: vA ? (labelMap[vA] ?? vA) : '—',
+              fmtB: vB ? (labelMap[vB] ?? vB) : '—',
+              highlight: false,
+              delta: null,
+            }
+          }
+          // epci_info (population | nbCommunes | surface)
+          const vA = row.field === 'population'
+            ? (dA.epciDetails?.population ?? null)
+            : row.field === 'nbCommunes'
+              ? (dA.epciDetails?.nbCommunes ?? null)
+              : (dA.epciDetails?.surface ?? null)
+          const vB = row.field === 'population'
+            ? (dB.epciDetails?.population ?? null)
+            : row.field === 'nbCommunes'
+              ? (dB.epciDetails?.nbCommunes ?? null)
+              : (dB.epciDetails?.surface ?? null)
           if (vA == null && vB == null) return null
+          const fmtInfoVal = (v: number | null) =>
+            row.field === 'population' ? fmtPop(v)
+            : row.field === 'surface' ? fmtSurface(v)
+            : fmtCount(v)
           return {
             label: row.label,
-            fmtA: fmt(vA, row.format),
-            fmtB: fmt(vB, row.format),
-            highlight: row.highlight ?? false,
-            delta: row.highlight ? delta(vA, vB) : null,
+            fmtA: fmtInfoVal(vA),
+            fmtB: fmtInfoVal(vB),
+            highlight: false,
+            delta: row.field === 'population' ? delta(vA, vB) : null,
           }
         })
-        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .filter((r): r is RenderedRow => r !== null)
       if (!rows.length) return null
       return { title: section.title, rows }
     })
     .filter((s): s is NonNullable<typeof s> => s !== null)
 })
 
+const CFE_TRANCHES = [
+  { key: '1', label: '≤ 10 000 €' },
+  { key: '2', label: '10 001 – 32 600 €' },
+  { key: '3', label: '32 601 – 100 000 €' },
+  { key: '4', label: '100 001 – 250 000 €' },
+  { key: '5', label: '250 001 – 500 000 €' },
+  { key: '6', label: '> 500 000 €' },
+]
+
+interface CfeBasesRow {
+  tranche: string
+  tcA: string; ptA: string
+  tcB: string; ptB: string
+  hasDelta: boolean
+}
+
+const cfeBasesComparison = computed((): CfeBasesRow[] => {
+  const dA = store.data
+  const dB = store.comparaisonData
+  if (!dA || !dB) return []
+  const rows = CFE_TRANCHES.map(t => ({
+    tranche: t.label,
+    tcA: fmtAmount(dA.cfeFocusVars[`BAMINTCT${t.key}`]?.valeur ?? null),
+    ptA: t.key === '6' ? '—' : fmtAmount(dA.cfeFocusVars[`BAMINTPT${t.key}`]?.valeur ?? null),
+    tcB: fmtAmount(dB.cfeFocusVars[`BAMINTCT${t.key}`]?.valeur ?? null),
+    ptB: t.key === '6' ? '—' : fmtAmount(dB.cfeFocusVars[`BAMINTPT${t.key}`]?.valeur ?? null),
+    hasDelta: false,
+  }))
+  return rows.filter(r => r.tcA !== '—' || r.tcB !== '—' || r.ptA !== '—' || r.ptB !== '—')
+})
+
 const nameA = computed(() => store.data?.meta.libcom ?? store.selected?.name ?? '')
 const nameB = computed(() => store.comparaisonData?.meta.libcom ?? store.comparaisonTarget?.name ?? '')
+
+const aiLoading = ref(false)
+
+function analyzeWithAI() {
+  // TODO: wire to AI analysis service once architecture is validated (see CLAUDE.md)
+}
 
 const forjLabel = computed(() => {
   const f = store.data?.meta.forjepci
   return f ? (FORJ_LABELS[f] ?? f) : null
+})
+
+const infoCard = computed(() => {
+  const dA = store.data
+  const dB = store.comparaisonData
+  if (!dA || !dB) return null
+  const make = (d: TerritoireData) => ({
+    forjepci: d.meta.forjepci && d.meta.forjepci !== 'null' ? d.meta.forjepci : null,
+    forjLabel: d.meta.forjepci && d.meta.forjepci !== 'null' ? (FORJ_LABELS[d.meta.forjepci] ?? d.meta.forjepci) : null,
+    optepci: d.meta.optepci && d.meta.optepci !== 'null' ? d.meta.optepci : null,
+    optLabel: d.meta.optepci && d.meta.optepci !== 'null' ? (OPTEPCI_LABELS[d.meta.optepci] ?? d.meta.optepci) : null,
+    population: d.epciDetails?.population ?? null,
+    nbCommunes: d.epciDetails?.nbCommunes ?? null,
+    surface: d.epciDetails?.surface ?? null,
+  })
+  return { a: make(dA), b: make(dB) }
 })
 
 const displayList = computed(() =>
@@ -274,6 +471,27 @@ const listLabel = computed(() =>
 
           <div class="cv-divider" />
 
+          <div v-if="infoCard && !store.comparaisonLoading && !store.comparaisonError" class="cv-info-cards">
+            <div class="cv-info-card cv-info-card--a">
+              <div class="cv-info-top">
+                <span v-if="infoCard.a.forjepci" class="cv-info-badge cv-info-badge--forj" :title="infoCard.a.forjLabel || ''">{{ infoCard.a.forjepci }}</span>
+                <span v-if="infoCard.a.optepci" class="cv-info-badge cv-info-badge--opt" :title="infoCard.a.optLabel || ''">{{ infoCard.a.optepci }}</span>
+              </div>
+              <div class="cv-info-row"><span class="cv-info-lbl">Population</span><span class="cv-info-val">{{ fmtPop(infoCard.a.population) }}</span></div>
+              <div class="cv-info-row"><span class="cv-info-lbl">Communes</span><span class="cv-info-val">{{ fmtCount(infoCard.a.nbCommunes) }}</span></div>
+              <div class="cv-info-row"><span class="cv-info-lbl">Surface</span><span class="cv-info-val">{{ fmtSurface(infoCard.a.surface) }}</span></div>
+            </div>
+            <div class="cv-info-card cv-info-card--b">
+              <div class="cv-info-top">
+                <span v-if="infoCard.b.forjepci" class="cv-info-badge cv-info-badge--forj" :title="infoCard.b.forjLabel || ''">{{ infoCard.b.forjepci }}</span>
+                <span v-if="infoCard.b.optepci" class="cv-info-badge cv-info-badge--opt" :title="infoCard.b.optLabel || ''">{{ infoCard.b.optepci }}</span>
+              </div>
+              <div class="cv-info-row"><span class="cv-info-lbl">Population</span><span class="cv-info-val">{{ fmtPop(infoCard.b.population) }}</span></div>
+              <div class="cv-info-row"><span class="cv-info-lbl">Communes</span><span class="cv-info-val">{{ fmtCount(infoCard.b.nbCommunes) }}</span></div>
+              <div class="cv-info-row"><span class="cv-info-lbl">Surface</span><span class="cv-info-val">{{ fmtSurface(infoCard.b.surface) }}</span></div>
+            </div>
+          </div>
+
           <div v-if="store.comparaisonLoading" class="cv-loading">
             <div v-for="i in 6" :key="i" class="skeleton cv-skeleton-row" :style="{ '--w': `${50 + i * 8}%` }" />
           </div>
@@ -308,13 +526,43 @@ const listLabel = computed(() =>
               </div>
             </div>
 
-            <div v-if="!compareSections.length" class="cv-empty-table">
+            <!-- Bases minimum CFE barème -->
+            <div v-if="cfeBasesComparison.length" class="cv-section cv-section--cfe-bases">
+              <h3 class="cv-section-title">Bases minimum CFE — barème</h3>
+              <div class="cv-cfe-header">
+                <span>Tranche CA</span>
+                <span class="cv-cfe-col--a">TC (A)</span>
+                <span class="cv-cfe-col--b">TC (B)</span>
+                <span class="cv-cfe-col--a">PT (A)</span>
+                <span class="cv-cfe-col--b">PT (B)</span>
+              </div>
+              <div v-for="row in cfeBasesComparison" :key="row.tranche" class="cv-cfe-row">
+                <span class="cv-cfe-tranche">{{ row.tranche }}</span>
+                <span class="cv-cfe-val">{{ row.tcA }}</span>
+                <span class="cv-cfe-val cv-cfe-val--b">{{ row.tcB }}</span>
+                <span class="cv-cfe-val">{{ row.ptA }}</span>
+                <span class="cv-cfe-val cv-cfe-val--b">{{ row.ptB }}</span>
+              </div>
+            </div>
+
+            <div v-if="!compareSections.length && !cfeBasesComparison.length" class="cv-empty-table">
               Aucun indicateur disponible pour cette comparaison.
             </div>
           </div>
 
           <footer class="cv-footer">
             <span>REI / DGFiP — {{ store.annee }}</span>
+            <button
+              v-if="store.comparaisonData && !store.comparaisonError"
+              class="cv-ai-btn"
+              :disabled="aiLoading"
+              @click="analyzeWithAI"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M6 1L7.2 4.2H10.5L7.9 6.1L8.9 9.3L6 7.4L3.1 9.3L4.1 6.1L1.5 4.2H4.8L6 1Z" fill="currentColor"/>
+              </svg>
+              {{ aiLoading ? 'Analyse en cours…' : 'Analyser avec l\'IA' }}
+            </button>
           </footer>
         </template>
       </div>
@@ -343,7 +591,7 @@ const listLabel = computed(() =>
   background: var(--panel-bg);
   border-radius: 16px;
   box-shadow: 0 24px 80px rgba(0,0,0,0.45), 0 0 1px rgba(0,0,0,0.2);
-  width: 100%; max-width: 680px; max-height: 82vh;
+  width: 100%; max-width: 760px; max-height: 82vh;
   display: flex; flex-direction: column; overflow: hidden;
 }
 
@@ -430,5 +678,84 @@ const listLabel = computed(() =>
 .cv-delta-badge--down { background: rgba(39, 103, 73, 0.1); color: #276749; }
 .cv-delta-badge--eq   { background: var(--chip-bg); color: var(--text-muted); }
 
-.cv-footer { padding: 12px 28px; border-top: 1px solid var(--border-light); font-family: var(--font-data); font-size: 10px; letter-spacing: 0.03em; color: var(--text-muted); }
+.cv-footer { padding: 12px 28px; border-top: 1px solid var(--border-light); font-family: var(--font-data); font-size: 10px; letter-spacing: 0.03em; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
+
+.cv-ai-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 6px;
+  border: 1px solid rgba(240,62,142,0.35);
+  background: rgba(240,62,142,0.06);
+  color: var(--shell-accent);
+  font-family: var(--font-ui); font-size: 11px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.cv-ai-btn:hover:not(:disabled) { background: rgba(240,62,142,0.12); border-color: rgba(240,62,142,0.6); }
+.cv-ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cv-section--cfe-bases { border-top: 1px solid var(--border-light); margin-top: 14px; padding-top: 16px; }
+
+.cv-cfe-header {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
+  padding: 5px 0;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 2px;
+}
+
+.cv-cfe-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-light);
+  gap: 4px;
+  align-items: center;
+}
+.cv-cfe-row:last-child { border-bottom: none; }
+
+.cv-cfe-tranche {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.cv-cfe-val {
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.cv-cfe-val--b { color: var(--shell-accent); }
+.cv-cfe-col--a { color: var(--text-secondary); text-align: right; }
+.cv-cfe-col--b { color: var(--shell-accent); text-align: right; }
+
+/* ── Info cards ──────────────────────────────────────────────── */
+.cv-info-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 14px 28px; border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+}
+.cv-info-card {
+  border-radius: 10px; border: 1px solid var(--border-light);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 7px;
+}
+.cv-info-card--a { border-left: 2px solid rgba(255,255,255,0.1); }
+.cv-info-card--b { border-left: 2px solid rgba(240,62,142,0.4); }
+.cv-info-top { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
+.cv-info-badge {
+  font-family: var(--font-data); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.05em; padding: 2px 7px; border-radius: 4px; cursor: default;
+}
+.cv-info-badge--forj { background: rgba(255,255,255,0.04); border: 1px solid var(--border-light); color: var(--text-secondary); }
+.cv-info-badge--opt { background: rgba(39,103,73,0.08); border: 1px solid rgba(39,103,73,0.25); color: #276749; }
+.cv-info-row { display: flex; justify-content: space-between; align-items: center; }
+.cv-info-lbl { font-family: var(--font-ui); font-size: 11px; color: var(--text-muted); }
+.cv-info-val { font-family: var(--font-data); font-size: 11px; color: var(--text-primary); }
 </style>

@@ -200,12 +200,12 @@ function clearQuery() {
 <style scoped>
 /* --- Panel shell --- */
 .search-panel {
-  position: absolute;
+  position: fixed;
   left: 20px;
   top: 20px;
   bottom: 20px;
   width: 390px;
-  z-index: 10;
+  z-index: 100;
   background: var(--panel-bg);
   border-radius: 16px;
   box-shadow: var(--panel-shadow);
@@ -246,10 +246,10 @@ function clearQuery() {
 }
 
 .brand-logo {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .brand-name {

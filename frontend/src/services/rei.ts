@@ -1,10 +1,10 @@
-import type { Territory, TerritoireData, ReiIndicateur, TerritoireMeta } from '@/types/territoire'
+import type { Territory, TerritoireData, ReiIndicateur, TerritoireMeta, EpciDetails } from '@/types/territoire'
 import { getDispositifs } from '@/services/dispositif'
 
 const BASE = 'https://data.ofgl.fr/api/explore/v2.1/catalog/datasets/rei/records'
 
 // Commune-level fiscal vars
-const COMMUNE_VARS = ['E11', 'E12', 'E13', 'B11', 'B12', 'B13', 'F22', 'F23', 'H13THS', 'TXMAJOTHRS']
+const COMMUNE_VARS = ['E11', 'E12', 'E13', 'B11', 'B12', 'B13', 'F22', 'F23', 'H13THS', 'TXMAJOTHRS', 'NBMAJOTHRS', 'MTMAJOTHRS', 'NLOCMAJOTHRS', 'VLMAJOTHRS']
 
 // GFP (EPCI) intercommunality fiscal vars — destinataire="GFP" rows only
 const EPCI_GFP_VARS = ['E31', 'E32', 'E32VOTE', 'E33', 'B31', 'B32', 'B32VOTE', 'B33', 'P31', 'P32', 'P32VOTE', 'P33']
@@ -93,5 +93,30 @@ export async function fetchTerritoireData(territory: Territory, annee = '2024'):
     ? getDispositifs(territory.code, indicateurs)
     : {}
 
-  return { meta, indicateurs, annee, ta: null, dispositifs }
+  return { meta, indicateurs, annee, ta: null, dispositifs, epciDetails: null, cfeFocusVars: {} }
 }
+
+export async function fetchCfeFocusVars(
+  siren: string,
+  annee: string,
+): Promise<Record<string, ReiIndicateur>> {
+  const where = `sirepci="${siren}" AND annee="${annee}" AND var IN ("${CFE_FOCUS_VARS.join('","')}")`
+  const url = `${BASE}?where=${encodeURIComponent(where)}&select=var,varlib,valeur,dispositif_fiscal,categorie&limit=30`
+  const res = await fetch(url)
+  if (!res.ok) return {}
+  const json = await res.json()
+  const result: Record<string, ReiIndicateur> = {}
+  for (const r of (json.results as Array<Record<string, unknown>>) ?? []) {
+    result[String(r.var)] = {
+      var: String(r.var),
+      varlib: String(r.varlib),
+      valeur: r.valeur != null ? Number(r.valeur) : null,
+      dispositif_fiscal: String(r.dispositif_fiscal),
+      categorie: String(r.categorie),
+    }
+  }
+  return result
+}
+
+// Re-export EpciDetails so callers can import from rei.ts if needed
+export type { EpciDetails }

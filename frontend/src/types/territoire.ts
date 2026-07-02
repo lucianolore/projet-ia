@@ -53,10 +53,18 @@ export interface TaData {
   hasMultipleZones: boolean
 }
 
+export interface EpciDetails {
+  population: number | null
+  nbCommunes: number | null
+  surface: number | null
+}
+
 export interface TerritoireData {
   meta: TerritoireMeta
   indicateurs: Record<string, ReiIndicateur>
   annee: string
   ta: TaData | null
   dispositifs: Record<string, DispositifIndicateur>
+  epciDetails: EpciDetails | null
+  cfeFocusVars: Record<string, ReiIndicateur>
 }
